@@ -1,0 +1,32 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next
+/.next/
+/out/
+
+# hardhat
+/artifacts/
+/cache/
+/typechain-types/
+
+# production
+/build
+
+# local
+.DS_Store
+*.pem
+*.log
+
+# environment and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
