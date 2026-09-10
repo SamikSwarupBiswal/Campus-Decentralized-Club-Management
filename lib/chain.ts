@@ -10,7 +10,11 @@ export const polygonAmoy = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://rpc-amoy.polygon.technology"],
+      http: [
+        "https://polygon-amoy-bor-rpc.publicnode.com",
+        "https://polygon-amoy.drpc.org",
+        "https://rpc-amoy.polygon.technology",
+      ],
     },
   },
   blockExplorers: {
