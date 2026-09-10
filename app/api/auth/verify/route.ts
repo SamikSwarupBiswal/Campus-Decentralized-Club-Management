@@ -43,6 +43,6 @@ export async function POST(request: Request) {
       { status: 401 },
     );
   }
-  await setSessionCookie(parsed.data.address);
+  await setSessionCookie(parsed.data.address, parsed.data.rememberMe);
   return NextResponse.json({ ok: true, address: parsed.data.address });
 }

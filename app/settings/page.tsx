@@ -12,6 +12,8 @@ import { PageHeader } from "@/components/page-header";
 import { Badge, Card } from "@/components/ui";
 import { contractAddresses } from "@/lib/contracts";
 import { shortAddress } from "@/lib/utils";
+import { getSession } from "@/lib/server/session";
+import { SettingsSignOut } from "@/components/settings-sign-out";
 
 const contracts = [
   ["Membership registry", contractAddresses.membership],
@@ -20,7 +22,8 @@ const contracts = [
   ["Attendance registry", contractAddresses.attendance],
 ] as const;
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const session = await getSession();
   const configured = contracts.filter(([, value]) => value).length;
   return (
     <div className="page">
@@ -30,6 +33,12 @@ export default function SettingsPage() {
         description="Public network configuration and deployment readiness. Secrets are never rendered in the browser."
       />
       <section className="settings-grid">
+        {session && <Card className="content-card settings-card">
+          <div className="section-heading"><div><span className="section-kicker">Your account</span><h2>Signed-in session</h2></div></div>
+          <p>Signed in as <span className="mono">{shortAddress(session.address)}</span>.</p>
+          <p>Sign out of this browser and disconnect your wallet.</p>
+          <SettingsSignOut />
+        </Card>}
         <Card className="content-card settings-card">
           <div className="section-heading"><div><span className="section-kicker">Blockchain</span><h2>Polygon Amoy</h2></div><Network size={20} /></div>
           <div className="info-row"><span>Chain ID</span><strong className="mono">80002</strong></div>

@@ -47,6 +47,7 @@ test("signed authentication rejects bad signatures, replay, altered messages, an
   const valid = await request.post("/api/auth/verify", { data: { address: wallet.address, message, signature } });
   expect(valid.status()).toBe(200);
   expect(valid.headers()["set-cookie"]).toContain("HttpOnly");
+  expect(valid.headers()["set-cookie"]).not.toMatch(/Max-Age|Expires/i);
   expect((await (await request.get("/api/auth/session")).json()).address).toBe(wallet.address.toLowerCase());
   expect((await request.post("/api/auth/verify", { data: { address: wallet.address, message, signature } })).status()).toBe(401);
   expect((await request.post("/api/auth/challenge", { headers: { origin: "https://foreign.example" }, data: { address: wallet.address } })).status()).toBe(403);
@@ -81,14 +82,36 @@ test("wallet UI connects, signs in, and clears the server session on sign-out", 
     Object.defineProperty(window, "ethereum", { value: provider });
   }, { address: wallet.address });
   await page.goto("/login");
+  await page.getByRole("checkbox", { name: /Keep me signed in/ }).check();
   await page.getByRole("button", { name: "Connect MetaMask" }).click();
   await page.getByRole("button", { name: "Sign in with wallet" }).click();
   await expect(page).toHaveURL(/dashboard/);
   await expect(page.getByText("A little less permission.")).toBeVisible();
   expect((await (await page.request.get("/api/auth/session")).json()).address).toBe(wallet.address.toLowerCase());
-  await page.getByRole("button", { name: "Sign out and disconnect" }).click();
+  const cookie = (await page.context().cookies()).find(cookie => cookie.name === "campus_dao_session")!;
+  expect(cookie.expires - Date.now() / 1000).toBeGreaterThan(29 * 86400);
+  // Reload with the provider temporarily disconnected: the valid server session must survive.
+  await page.reload();
+  await expect(page).toHaveURL(/dashboard/);
+  await page.goto("/settings");
+  await expect(page.getByRole("heading", { name: "Signed-in session" })).toBeVisible();
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(page).toHaveURL(/login/);
   await expect.poll(async () => (await (await page.request.get("/api/auth/session")).json()).address).toBeNull();
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/login/);
   expect((await (await page.request.get("/api/auth/session")).json()).address).toBeNull();
+});
+
+test("remember-me expiry is signed and its input is validated", async ({ request }) => {
+  const wallet = Wallet.createRandom();
+  const { message } = await (await request.post("/api/auth/challenge", { data: { address: wallet.address } })).json();
+  const data = { address: wallet.address, message, signature: await wallet.signMessage(message) };
+  expect((await request.post("/api/auth/verify", { data: { ...data, rememberMe: "true" } })).status()).toBe(400);
+  const response = await request.post("/api/auth/verify", { data: { ...data, rememberMe: true } });
+  expect(response.status()).toBe(200);
+  expect(response.headers()["set-cookie"]).toContain("Max-Age=2592000");
+  const token = response.headers()["set-cookie"].split(";")[0].split("=")[1];
+  const payload = JSON.parse(Buffer.from(token.split(".")[0], "base64url").toString());
+  expect(payload.expiresAt - payload.issuedAt).toBe(2592000);
 });

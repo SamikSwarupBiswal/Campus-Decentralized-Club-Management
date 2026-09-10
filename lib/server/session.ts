@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 
 const COOKIE_NAME = "campus_dao_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
+const PERSISTENT_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 
 export interface SessionPayload {
   address: `0x${string}`;
@@ -27,12 +28,12 @@ function signature(payload: string) {
   return createHmac("sha256", secret()).update(payload).digest("base64url");
 }
 
-export function createSessionToken(address: `0x${string}`) {
+export function createSessionToken(address: `0x${string}`, rememberMe = false) {
   const now = Math.floor(Date.now() / 1000);
   const data: SessionPayload = {
     address: address.toLowerCase() as `0x${string}`,
     issuedAt: now,
-    expiresAt: now + SESSION_TTL_SECONDS,
+    expiresAt: now + (rememberMe ? PERSISTENT_SESSION_TTL_SECONDS : SESSION_TTL_SECONDS),
   };
   const payload = encode(JSON.stringify(data));
   return `${payload}.${signature(payload)}`;
@@ -71,13 +72,13 @@ export function verifySessionToken(token?: string): SessionPayload | null {
   }
 }
 
-export async function setSessionCookie(address: `0x${string}`) {
+export async function setSessionCookie(address: `0x${string}`, rememberMe = false) {
   const store = await cookies();
-  store.set(COOKIE_NAME, createSessionToken(address), {
+  store.set(COOKIE_NAME, createSessionToken(address, rememberMe), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: SESSION_TTL_SECONDS,
+    ...(rememberMe ? { maxAge: PERSISTENT_SESSION_TTL_SECONDS } : {}),
     path: "/",
   });
 }

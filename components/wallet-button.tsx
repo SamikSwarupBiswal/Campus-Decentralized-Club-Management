@@ -6,8 +6,8 @@ import { useAccount, useConnect, useDisconnect, useSignMessage, useSwitchChain }
 import { polygonAmoy } from "@/lib/chain";
 import { shortAddress } from "@/lib/utils";
 
-export function WalletButton({ compact = false, onSignedIn }: { compact?: boolean; onSignedIn?: (address: string) => void }) {
-  const { address, chainId, isConnected } = useAccount();
+export function WalletButton({ compact = false, rememberMe = false, onSignedIn }: { compact?: boolean; rememberMe?: boolean; onSignedIn?: (address: string) => void }) {
+  const { address, chainId, isConnected, status } = useAccount();
   const { connectAsync, connectors } = useConnect();
   const { disconnectAsync } = useDisconnect();
   const { switchChainAsync } = useSwitchChain();
@@ -19,16 +19,17 @@ export function WalletButton({ compact = false, onSignedIn }: { compact?: boolea
   currentAddress.current = address;
 
   useEffect(() => {
+    if (status === "connecting" || status === "reconnecting") return;
     let active = true;
     setSignedIn(null);
     fetch("/api/auth/session", { cache: "no-store" }).then(r => r.json()).then(async session => {
       if (!active) return;
-      if (session.address && session.address !== address?.toLowerCase()) {
+      if (session.address && address && session.address !== address.toLowerCase()) {
         await fetch("/api/auth/logout", { method: "POST" });
       } else if (active) setSignedIn(session.address);
     }).catch(() => { if (active) setError("Unable to check your session. Try signing in again."); });
     return () => { active = false; };
-  }, [address]);
+  }, [address, status]);
 
   async function act() {
     setBusy(true);
@@ -51,7 +52,7 @@ export function WalletButton({ compact = false, onSignedIn }: { compact?: boolea
       if (!response.ok) throw new Error(challenge.error || "Unable to prepare sign-in.");
       const signature = await signMessageAsync({ message: challenge.message });
       if (currentAddress.current !== signingAddress) throw new Error("Wallet changed. Please sign in again.");
-      const verified = await fetch("/api/auth/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address, signature, message: challenge.message }) });
+      const verified = await fetch("/api/auth/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address, signature, message: challenge.message, rememberMe }) });
       const result = await verified.json();
       if (!verified.ok) throw new Error(result.error || "Sign-in failed.");
       if (currentAddress.current !== signingAddress) {
@@ -71,12 +72,12 @@ export function WalletButton({ compact = false, onSignedIn }: { compact?: boolea
       const response = await fetch("/api/auth/logout", { method: "POST" });
       if (!response.ok) throw new Error("Could not end the server session. Please retry.");
       setSignedIn(null);
-      await disconnectAsync();
+      try { await disconnectAsync(); } finally { window.location.replace("/login"); }
     } catch (err) { setError(err instanceof Error ? err.message : "Sign-out failed"); }
     finally { setBusy(false); }
   }
 
-  const label = !isConnected ? "Connect MetaMask" : chainId !== polygonAmoy.id ? "Switch to Amoy" : signedIn ? shortAddress(address) : "Sign in with wallet";
+  const label = signedIn ? shortAddress(signedIn) : !isConnected ? "Connect MetaMask" : chainId !== polygonAmoy.id ? "Switch to Amoy" : "Sign in with wallet";
   return <div className="wallet-wrap">
     <button className="wallet-button" onClick={signedIn ? logout : act} disabled={busy} aria-label={signedIn ? "Sign out and disconnect" : label}>
       {busy ? <LoaderCircle size={17} className="spin" /> : signedIn ? <LogOut size={17} /> : <Wallet size={17} />}

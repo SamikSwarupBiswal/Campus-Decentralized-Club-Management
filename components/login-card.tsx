@@ -3,10 +3,12 @@
 import { ArrowLeft, CheckCircle2, ShieldCheck, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { WalletButton } from "./wallet-button";
 
 export function LoginCard() {
   const router = useRouter();
+  const [rememberMe, setRememberMe] = useState(false);
 
   return <main className="login-page">
     <div className="login-glow" aria-hidden="true" />
@@ -21,7 +23,11 @@ export function LoginCard() {
         <div><span>02</span><strong>Sign the login message</strong></div>
         <div><span>03</span><strong>Enter your workspace</strong></div>
       </div>
-      <WalletButton onSignedIn={() => router.replace("/dashboard")} />
+      <label className="login-remember">
+        <input type="checkbox" checked={rememberMe} onChange={event => setRememberMe(event.target.checked)} />
+        <span>Keep me signed in for 30 days<small>Only use this on a device you trust.</small></span>
+      </label>
+      <WalletButton rememberMe={rememberMe} onSignedIn={() => router.replace("/dashboard")} />
       <div className="login-safety"><ShieldCheck size={16} /><span>No gas fee. No blockchain transaction. Your private key never leaves MetaMask.</span></div>
     </section>
     <div className="login-proof"><CheckCircle2 size={15} /> Challenge expires in five minutes and can only be used once.</div>

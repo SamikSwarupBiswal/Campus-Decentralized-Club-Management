@@ -10,6 +10,7 @@ export const authChallengeSchema = z.object({
 });
 
 export const authVerifySchema = z.object({
+  rememberMe: z.boolean().default(false),
   address: addressSchema,
   message: z.string().min(20).max(1_000),
   signature: z.string().regex(/^0x[a-fA-F0-9]{130}$/),
