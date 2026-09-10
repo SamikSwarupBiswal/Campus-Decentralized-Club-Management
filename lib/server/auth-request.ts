@@ -1,64 +1,100 @@
 import { NextResponse } from "next/server";
 
-export function getRequestOrigin(request: Request): string {
-  const forwardedProto = request.headers.get("x-forwarded-proto");
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const host = forwardedHost || request.headers.get("host");
-  if (host) {
-    const proto =
-      forwardedProto ||
-      (host.startsWith("localhost") || host.startsWith("127.0.0.1")
-        ? "http"
-        : "https");
-    return `${proto}://${host}`;
+function getOriginHostname(originStr?: string | null): string | null {
+  if (!originStr) return null;
+  try {
+    return new URL(originStr).hostname.toLowerCase();
+  } catch {
+    return null;
   }
-  return new URL(request.url).origin;
+}
+
+export function getRequestHostname(request: Request): string {
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = (forwardedHost || request.headers.get("host") || new URL(request.url).host)
+    .split(",")[0]
+    .trim()
+    .split(":")[0]
+    .toLowerCase();
+  return host;
+}
+
+function isLocal(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+export function isAllowedOrigin(originStr: string | null, request: Request): boolean {
+  if (!originStr) return true;
+  const originHost = getOriginHostname(originStr);
+  if (!originHost) return false;
+
+  const reqHost = getRequestHostname(request);
+  if (originHost === reqHost) return true;
+
+  const configured = process.env.NEXT_PUBLIC_APP_URL;
+  if (configured) {
+    const configuredHost = getOriginHostname(configured);
+    if (configuredHost && originHost === configuredHost) return true;
+  }
+
+  if (isLocal(originHost) && isLocal(reqHost)) return true;
+
+  // Allow any Vercel deployment of this project
+  if (
+    originHost.endsWith(".vercel.app") &&
+    (originHost.includes("campus") || reqHost.endsWith(".vercel.app"))
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /** Bind browser authentication to the expected site origin. */
-export function authOrigin(request: Request) {
-  const reqOrigin = getRequestOrigin(request);
-  const configured = process.env.NEXT_PUBLIC_APP_URL;
-
-  if (configured) {
+export function authOrigin(request: Request): string {
+  const origin = request.headers.get("origin");
+  if (origin && isAllowedOrigin(origin, request)) {
     try {
-      const configuredOrigin = new URL(configured).origin;
-      if (reqOrigin === configuredOrigin) {
-        return configuredOrigin;
-      }
+      return new URL(origin).origin;
     } catch {
-      // ignore invalid URL
+      // ignore
     }
   }
 
-  return reqOrigin;
+  const reqHost = getRequestHostname(request);
+  const proto = isLocal(reqHost) ? "http" : "https";
+
+  const configured = process.env.NEXT_PUBLIC_APP_URL;
+  if (configured) {
+    try {
+      const configuredUrl = new URL(configured);
+      if (configuredUrl.hostname.toLowerCase() === reqHost) {
+        return configuredUrl.origin;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const fullHost = (
+    request.headers.get("x-forwarded-host") ||
+    request.headers.get("host") ||
+    new URL(request.url).host
+  )
+    .split(",")[0]
+    .trim();
+
+  return `${proto}://${fullHost}`;
 }
 
 export function checkAuthRequest(request: Request) {
-  const expected = authOrigin(request);
   const origin = request.headers.get("origin");
 
-  if (origin) {
-    const configured = process.env.NEXT_PUBLIC_APP_URL;
-    let configuredOrigin: string | null = null;
-    if (configured) {
-      try {
-        configuredOrigin = new URL(configured).origin;
-      } catch {
-        // ignore
-      }
-    }
-
-    const isAllowed =
-      origin === expected ||
-      (configuredOrigin !== null && origin === configuredOrigin);
-
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: "Request origin is not allowed" },
-        { status: 403 },
-      );
-    }
+  if (origin && !isAllowedOrigin(origin, request)) {
+    return NextResponse.json(
+      { error: "Request origin is not allowed" },
+      { status: 403 },
+    );
   }
 
   if (
