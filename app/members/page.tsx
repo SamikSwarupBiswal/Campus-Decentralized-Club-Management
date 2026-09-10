@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, Search, ShieldCheck, UserPlus, Users2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Card } from "@/components/ui";
 import { members } from "@/lib/demo-data";
@@ -9,6 +9,15 @@ import { explorerUrl, formatDate, shortAddress } from "@/lib/utils";
 
 export default function MembersPage() {
   const [query, setQuery] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/session", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((s) => setIsAdmin(!!s.isAdmin))
+      .catch(() => {});
+  }, []);
+
   const filtered = useMemo(
     () =>
       members.filter((member) =>
@@ -25,9 +34,11 @@ export default function MembersPage() {
         title="Members"
         description="One verified student, one non-transferable governance identity."
         action={
-          <a href="/admin?tab=members" className="button button-primary button-md">
-            <UserPlus size={17} /> Register member
-          </a>
+          isAdmin ? (
+            <a href="/admin?tab=members" className="button button-primary button-md">
+              <UserPlus size={17} /> Register member
+            </a>
+          ) : undefined
         }
       />
       <section className="member-stats">
