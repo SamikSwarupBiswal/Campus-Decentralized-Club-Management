@@ -14,8 +14,9 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Button, Card } from "@/components/ui";
-import { events, members } from "@/lib/demo-data";
+import { events as fallbackEvents, members as fallbackMembers } from "@/lib/demo-data";
 import { cn, formatDate, shortAddress } from "@/lib/utils";
+import type { ClubEvent, Member } from "@/lib/types";
 
 type Tab = "members" | "events";
 
@@ -25,6 +26,28 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("members");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string>();
+  const [adminMembers, setAdminMembers] = useState<Member[]>(fallbackMembers);
+  const [adminEvents, setAdminEvents] = useState<ClubEvent[]>(fallbackEvents);
+
+  const refreshData = () => {
+    fetch("/api/members", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.members && Array.isArray(data.members)) {
+          setAdminMembers(data.members);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/events", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.events && Array.isArray(data.events)) {
+          setAdminEvents(data.events);
+        }
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
     fetch("/api/auth/session", { cache: "no-store" })
@@ -34,6 +57,7 @@ export default function AdminPage() {
           router.replace("/dashboard");
         } else {
           setIsAdmin(true);
+          refreshData();
         }
       })
       .catch(() => {
@@ -71,6 +95,7 @@ export default function AdminPage() {
       if (!response.ok) throw new Error(body.error || "Request failed");
       setNotice(body.message || `${kind} saved`);
       event.currentTarget.reset();
+      refreshData();
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Could not save");
     } finally {
@@ -127,9 +152,9 @@ export default function AdminPage() {
             <span className="section-kicker">Recent members</span>
             <h2>Registry activity</h2>
             <div className="admin-member-list">
-              {members.slice(0, 4).map((member) => (
-                <div key={member.id}>
-                  <span className="member-avatar">{member.name.split(" ").map((part) => part[0]).join("")}</span>
+              {adminMembers.slice(0, 6).map((member) => (
+                <div key={member.id || member.wallet}>
+                  <span className="member-avatar">{(member.name || "M").split(" ").map((part) => part[0]).join("")}</span>
                   <span><strong>{member.name}</strong><small className="mono">{shortAddress(member.wallet)}</small></span>
                   <button aria-label={`Revoke ${member.name}`}><UserMinus size={14} /></button>
                 </div>
@@ -163,7 +188,7 @@ export default function AdminPage() {
             <span className="section-kicker">Event operations</span>
             <h2>Recent programme</h2>
             <div className="admin-event-list">
-              {events.map((event) => (
+              {adminEvents.map((event) => (
                 <div key={event.id}>
                   <span><strong>{event.name}</strong><small>{formatDate(event.date)} · {event.venue}</small></span>
                   <Badge tone={event.attendanceStatus === "Open" ? "accent" : event.attendanceStatus === "Finalized" ? "positive" : "neutral"}>{event.attendanceStatus}</Badge>

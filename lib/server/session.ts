@@ -14,6 +14,8 @@ export interface SessionPayload {
   name?: string;
 }
 
+import type { ClubEvent } from "@/lib/types";
+
 export interface MemberRecord {
   id: string;
   name: string;
@@ -30,10 +32,15 @@ export interface MemberRecord {
 declare global {
   // eslint-disable-next-line no-var
   var __campusDaoCustomMembers: Map<string, MemberRecord> | undefined;
+  // eslint-disable-next-line no-var
+  var __campusDaoCustomEvents: Map<string, ClubEvent> | undefined;
 }
 
 export const customMembers =
   global.__campusDaoCustomMembers || (global.__campusDaoCustomMembers = new Map());
+
+export const customEvents =
+  global.__campusDaoCustomEvents || (global.__campusDaoCustomEvents = new Map());
 
 export function isAdminWallet(address?: string | null): boolean {
   if (!address) return false;

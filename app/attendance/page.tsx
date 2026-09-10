@@ -12,14 +12,49 @@ import Link from "next/link";
 import { AttendanceScanner } from "@/components/attendance-scanner";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Card } from "@/components/ui";
-import { events } from "@/lib/demo-data";
+import { events as demoEvents } from "@/lib/demo-data";
 import { formatDate } from "@/lib/utils";
-import { getSession, isAdminWallet } from "@/lib/server/session";
+import { getSession, isAdminWallet, customEvents } from "@/lib/server/session";
+import { getDatabase } from "@/lib/server/mongodb";
+import type { ClubEvent } from "@/lib/types";
+
+async function getAllEvents(): Promise<ClubEvent[]> {
+  let dbEvents: ClubEvent[] = [];
+  const db = await getDatabase();
+  if (db) {
+    try {
+      dbEvents = (await db
+        .collection("events")
+        .find({}, { projection: { _id: 0 } })
+        .sort({ date: 1 })
+        .toArray()) as unknown as ClubEvent[];
+    } catch (e) {
+      console.error("Failed to load events in attendance page:", e);
+    }
+  }
+
+  const seen = new Set<string>();
+  const list: ClubEvent[] = [];
+  for (const ev of [...dbEvents, ...Array.from(customEvents.values())]) {
+    if (ev.id && !seen.has(ev.id)) {
+      seen.add(ev.id);
+      list.push(ev);
+    }
+  }
+  for (const ev of demoEvents) {
+    if (ev.id && !seen.has(ev.id)) {
+      seen.add(ev.id);
+      list.push(ev);
+    }
+  }
+  return list;
+}
 
 export default async function AttendancePage() {
   const session = await getSession();
   const isAdmin = isAdminWallet(session?.address);
-  const currentEvent = events.find((event) => event.attendanceStatus === "Open");
+  const allEvents = await getAllEvents();
+  const currentEvent = allEvents.find((event) => event.attendanceStatus === "Open");
 
   return (
     <div className="page">
@@ -95,7 +130,7 @@ export default async function AttendancePage() {
             <tr><th>Event</th><th>Date</th><th>Status</th><th>Integrity</th><th>Proof</th></tr>
           </thead>
           <tbody>
-            {events.filter((event) => event.attendanceStatus === "Finalized").map((event) => (
+            {allEvents.filter((event) => event.attendanceStatus === "Finalized").map((event) => (
               <tr key={event.id}>
                 <td className="primary-cell" data-label="Event"><strong>{event.name}</strong><span>{event.venue}</span></td>
                 <td data-label="Date">{formatDate(event.date)}</td>

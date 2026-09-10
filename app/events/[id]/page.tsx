@@ -13,10 +13,36 @@ import { AttendanceQr } from "@/components/attendance-qr";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Card } from "@/components/ui";
 import { events } from "@/lib/demo-data";
+import { getDatabase } from "@/lib/server/mongodb";
+import { customEvents } from "@/lib/server/session";
 import { formatDate } from "@/lib/utils";
+import type { ClubEvent } from "@/lib/types";
+
+export const dynamicParams = true;
 
 export function generateStaticParams() {
   return events.map((event) => ({ id: event.id }));
+}
+
+async function findEvent(id: string): Promise<ClubEvent | null> {
+  const demo = events.find((item) => item.id === id);
+  if (demo) return demo;
+
+  if (customEvents.has(id)) {
+    return customEvents.get(id)!;
+  }
+
+  const db = await getDatabase();
+  if (db) {
+    try {
+      const doc = await db.collection("events").findOne({ id }, { projection: { _id: 0 } });
+      if (doc) return doc as unknown as ClubEvent;
+    } catch (e) {
+      console.error("Failed to query event from MongoDB:", e);
+    }
+  }
+
+  return null;
 }
 
 export default async function EventDetailPage({
@@ -25,7 +51,7 @@ export default async function EventDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const event = events.find((item) => item.id === id);
+  const event = await findEvent(id);
   if (!event) notFound();
 
   return (

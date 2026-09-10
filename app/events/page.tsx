@@ -1,10 +1,27 @@
+"use client";
+
 import { CalendarPlus2 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { EventCard } from "@/components/event-card";
 import { PageHeader } from "@/components/page-header";
-import { events } from "@/lib/demo-data";
+import { events as fallbackEvents } from "@/lib/demo-data";
+import type { ClubEvent } from "@/lib/types";
 
 export default function EventsPage() {
+  const [eventList, setEventList] = useState<ClubEvent[]>(fallbackEvents);
+
+  useEffect(() => {
+    fetch("/api/events", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.events && Array.isArray(data.events)) {
+          setEventList(data.events);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="page">
       <PageHeader
@@ -18,7 +35,7 @@ export default function EventsPage() {
         }
       />
       <section className="event-grid">
-        {events.map((event) => (
+        {eventList.map((event) => (
           <EventCard key={event.id} event={event} />
         ))}
       </section>

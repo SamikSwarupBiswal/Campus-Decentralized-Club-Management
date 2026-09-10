@@ -4,28 +4,39 @@ import { ExternalLink, Search, ShieldCheck, UserPlus, Users2 } from "lucide-reac
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Card } from "@/components/ui";
-import { members } from "@/lib/demo-data";
+import { members as fallbackMembers } from "@/lib/demo-data";
 import { explorerUrl, formatDate, shortAddress } from "@/lib/utils";
+import type { Member } from "@/lib/types";
 
 export default function MembersPage() {
   const [query, setQuery] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [memberList, setMemberList] = useState<Member[]>(fallbackMembers);
 
   useEffect(() => {
     fetch("/api/auth/session", { cache: "no-store" })
       .then((r) => r.json())
       .then((s) => setIsAdmin(!!s.isAdmin))
       .catch(() => {});
+
+    fetch("/api/members", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.members && Array.isArray(data.members)) {
+          setMemberList(data.members);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const filtered = useMemo(
     () =>
-      members.filter((member) =>
-        `${member.name} ${member.studentId} ${member.wallet}`
+      memberList.filter((member) =>
+        `${member.name} ${member.studentId} ${member.wallet} ${member.department || ""}`
           .toLowerCase()
           .includes(query.toLowerCase()),
       ),
-    [query],
+    [memberList, query],
   );
   return (
     <div className="page">
@@ -42,9 +53,9 @@ export default function MembersPage() {
         }
       />
       <section className="member-stats">
-        <Card><Users2 size={19} /><span>Verified members<strong>168</strong></span></Card>
-        <Card><ShieldCheck size={19} /><span>Eligible voters<strong>164</strong></span></Card>
-        <Card><UserPlus size={19} /><span>Joined this month<strong>12</strong></span></Card>
+        <Card><Users2 size={19} /><span>Verified members<strong>{memberList.length}</strong></span></Card>
+        <Card><ShieldCheck size={19} /><span>Eligible voters<strong>{memberList.filter((m) => m.status === "Active" || !m.status).length}</strong></span></Card>
+        <Card><UserPlus size={19} /><span>Joined this month<strong>{memberList.length}</strong></span></Card>
       </section>
       <Card className="content-card member-table-card">
         <div className="toolbar">
