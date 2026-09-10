@@ -54,8 +54,8 @@ export default async function SettingsPage() {
           </div>
         </Card>
         <Card className="content-card settings-card">
-          <div className="section-heading"><div><span className="section-kicker">Hosting</span><h2>Netlify ready</h2></div><Globe2 size={20} /></div>
-          <div className="settings-status"><CheckCircle2 size={18} /><span><strong>Build configuration detected</strong><small>Next.js runtime plugin and security headers included.</small></span></div>
+          <div className="section-heading"><div><span className="section-kicker">Hosting</span><h2>Vercel ready</h2></div><Globe2 size={20} /></div>
+          <div className="settings-status"><CheckCircle2 size={18} /><span><strong>Production deployment active</strong><small>Next.js build and security headers are configured.</small></span></div>
         </Card>
         <Card className="content-card settings-card">
           <div className="section-heading"><div><span className="section-kicker">Security</span><h2>Secret isolation</h2></div><ShieldCheck size={20} /></div>
