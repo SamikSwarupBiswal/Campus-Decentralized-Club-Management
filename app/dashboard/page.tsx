@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowUpRight, Vote, Vault, CalendarDays, QrCode, Users, Fingerprint } from "lucide-react";
+import { ArrowUpRight, Vote, Vault, CalendarDays, QrCode, Users, Fingerprint, Settings2 } from "lucide-react";
 import { getSession, isMemberRegistered, isAdminWallet } from "@/lib/server/session";
 
 const areas = [
@@ -10,6 +10,7 @@ const areas = [
   { name: "Show up. Be counted.", label: "Attendance", description: "Sign a short-lived QR with your wallet for a verified check-in.", href: "/attendance", icon: QrCode },
   { name: "Meet the collective.", label: "Members", description: "One member, one voice. Explore the people behind the club.", href: "/members", icon: Users },
   { name: "Trust, with receipts.", label: "Integrity", description: "Explore how an on-chain fingerprint makes changes detectable.", href: "/admin/integrity", icon: Fingerprint },
+  { name: "Control your configuration.", label: "Settings", description: "Inspect connected networks, contract addresses, and session credentials.", href: "/settings", icon: Settings2 },
 ];
 
 export default async function DashboardPage() {

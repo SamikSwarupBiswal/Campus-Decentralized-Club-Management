@@ -2316,8 +2316,8 @@ a {
 .verification-flow { margin-top: 18px; }
 .verification-flow > div { position: relative; display: grid; grid-template-columns: 30px 1fr; gap: 10px; min-height: 66px; }
 .verification-flow > div:not(:last-child)::after { position: absolute; top: 29px; bottom: 1px; left: 14px; width: 1px; background: var(--line); content: ""; }
-.verification-flow i { position: relative; z-index: 1; display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); background: var(--surface); font-size: 13px; font-style: normal; font-weight: 800; }
-.verification-flow .done i { border-color: var(--positive); color: #fff; background: var(--positive); }
+.verification-flow i { position: relative; z-index: 1; display: grid; width: 29px; height: 29px; place-items: center; border: 1px solid #ffffff; border-radius: 50%; color: #000000 !important; background: #ffffff !important; font-size: 13px; font-style: normal; font-weight: 800; }
+.verification-flow .done i { border-color: #ffffff; color: #000000 !important; background: #ffffff !important; }
 .verification-flow strong,
 .verification-flow small { display: block; }
 .verification-flow strong { font-size: 13px; }

@@ -111,7 +111,7 @@ export default async function AttendancePage() {
               <div className="done"><i>1</i><span><strong>Wallet signature</strong><small>Signer recovered cryptographically</small></span></div>
               <div className="done"><i>2</i><span><strong>Event & expiry</strong><small>Event-specific, under 60 seconds</small></span></div>
               <div className="done"><i>3</i><span><strong>Nonce consumption</strong><small>One-time challenge, replay blocked</small></span></div>
-              <div><i>4</i><span><strong>Final event hash</strong><small>Anchored on Polygon Amoy</small></span></div>
+              <div className="done"><i>4</i><span><strong>Final event hash</strong><small>Anchored on Polygon Amoy</small></span></div>
             </div>
           </Card>
         </section>

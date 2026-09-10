@@ -27,6 +27,7 @@ const navItems = [
   { href: "/events", label: "Events", icon: CalendarDays },
   { href: "/attendance", label: "Attendance", icon: QrCode },
   { href: "/members", label: "Members", icon: Users },
+  { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
 const adminItems = [
