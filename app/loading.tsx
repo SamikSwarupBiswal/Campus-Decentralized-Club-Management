@@ -3,9 +3,6 @@ import { Skeleton } from "@/components/ui";
 export default function Loading() {
   return (
     <div className="page">
-      <div className="desktop-topbar">
-        <Skeleton className="loading-search" />
-      </div>
       <div className="loading-heading">
         <Skeleton className="loading-eyebrow" />
         <Skeleton className="loading-title" />

@@ -1,6 +1,3 @@
-import Link from "next/link";
-import { WalletButton } from "./wallet-button";
-
 export function PageHeader({
   eyebrow,
   title,
@@ -13,19 +10,13 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <>
-      <div className="desktop-topbar" data-od-id="top-bar">
-        <Link href="/dashboard" style={{ marginRight: "auto", color: "var(--muted)" }}>Campus DAO / Workspace</Link>
-        <WalletButton />
+    <div className="page-heading">
+      <div>
+        {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+        <h1>{title}</h1>
+        {description && <p>{description}</p>}
       </div>
-      <div className="page-heading">
-        <div>
-          {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-          <h1>{title}</h1>
-          {description && <p>{description}</p>}
-        </div>
-        {action && <div className="page-action">{action}</div>}
-      </div>
-    </>
+      {action && <div className="page-action">{action}</div>}
+    </div>
   );
 }

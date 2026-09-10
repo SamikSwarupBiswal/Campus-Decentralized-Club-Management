@@ -85,13 +85,23 @@ test("wallet UI connects, signs in, and clears the server session on sign-out", 
   await page.getByRole("checkbox", { name: /Keep me signed in/ }).check();
   await page.getByRole("button", { name: "Connect MetaMask" }).click();
   await page.getByRole("button", { name: "Sign in with wallet" }).click();
+  // New member onboarding flow: must register with name before entering dashboard
+  await expect(page).toHaveURL(/register/);
+  await page.getByLabel(/Full name/).fill("Test Member");
+  await page.getByRole("button", { name: /Enter workspace/ }).click();
   await expect(page).toHaveURL(/dashboard/);
   await expect(page.getByText("A little less permission.")).toBeVisible();
+  // Member must not see the Admin console navigation tab
+  await expect(page.getByRole("link", { name: "Admin console" })).toHaveCount(0);
+  // Member must not see the Admin check-in scanner on attendance page
+  await page.goto("/attendance");
+  await expect(page.getByText("Admin check-in")).toHaveCount(0);
   expect((await (await page.request.get("/api/auth/session")).json()).address).toBe(wallet.address.toLowerCase());
   const cookie = (await page.context().cookies()).find(cookie => cookie.name === "campus_dao_session")!;
   expect(cookie.expires - Date.now() / 1000).toBeGreaterThan(29 * 86400);
   // Reload with the provider temporarily disconnected: the valid server session must survive.
   await page.reload();
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/dashboard/);
   await page.goto("/settings");
   await expect(page.getByRole("heading", { name: "Signed-in session" })).toBeVisible();

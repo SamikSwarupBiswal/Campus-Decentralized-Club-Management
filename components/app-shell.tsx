@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { WalletButton } from "./wallet-button";
 import { cn } from "@/lib/utils";
 
@@ -37,11 +37,25 @@ const adminItems = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/session", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        setIsAdmin(Boolean(data.isAdmin));
+      })
+      .catch(() => {});
+  }, [pathname]);
 
   function active(href: string) {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   }
+
+  const visibleAdminItems = isAdmin
+    ? adminItems
+    : adminItems.filter((item) => item.href !== "/admin");
 
   const navigation = (
     <>
@@ -70,19 +84,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span>{item.label}</span>
           </Link>
         ))}
-        <span className="nav-label nav-label-spaced">Management</span>
-        {adminItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn("nav-item", active(item.href) && "active")}
-            onClick={() => setMobileOpen(false)}
-          >
-            <item.icon size={18} strokeWidth={1.8} />
-            <span>{item.label}</span>
-          </Link>
-        ))}
+        {visibleAdminItems.length > 0 && (
+          <>
+            <span className="nav-label nav-label-spaced">
+              {isAdmin ? "Management" : "Integrity"}
+            </span>
+            {visibleAdminItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn("nav-item", active(item.href) && "active")}
+                onClick={() => setMobileOpen(false)}
+              >
+                <item.icon size={18} strokeWidth={1.8} />
+                <span>{item.label}</span>
+              </Link>
+            ))}
+          </>
+        )}
       </nav>
+
+      <div style={{ padding: "0 12px", marginTop: "auto", marginBottom: "8px" }}>
+        <WalletButton />
+      </div>
 
       <div className="sidebar-status">
         <div className="sidebar-status-top">
@@ -103,7 +127,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </>
   );
 
-  if (pathname === "/" || pathname === "/login") return <>{children}</>;
+  if (pathname === "/" || pathname === "/login" || pathname === "/register") return <>{children}</>;
 
   return (
     <div className="app-shell">

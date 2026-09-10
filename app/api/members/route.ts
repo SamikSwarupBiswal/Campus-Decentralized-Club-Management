@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { members } from "@/lib/demo-data";
 import { getDatabase } from "@/lib/server/mongodb";
 import { memberSchema } from "@/lib/server/schemas";
-import { requireAdmin } from "@/lib/server/session";
+import { customMembers, requireAdmin } from "@/lib/server/session";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   const db = await getDatabase();
-  if (!db) return NextResponse.json({ members, mode: "demo" });
+  const memoryList = Array.from(customMembers.values());
+  if (!db) return NextResponse.json({ members: [...memoryList, ...members], mode: "demo" });
   const records = await db
     .collection("members")
     .find({}, { projection: { _id: 0 } })

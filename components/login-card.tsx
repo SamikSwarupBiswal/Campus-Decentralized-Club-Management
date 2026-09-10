@@ -27,7 +27,12 @@ export function LoginCard() {
         <input type="checkbox" checked={rememberMe} onChange={event => setRememberMe(event.target.checked)} />
         <span>Keep me signed in for 30 days<small>Only use this on a device you trust.</small></span>
       </label>
-      <WalletButton rememberMe={rememberMe} onSignedIn={() => router.replace("/dashboard")} />
+      <WalletButton
+        rememberMe={rememberMe}
+        onSignedIn={(_address, isRegistered) => {
+          router.replace(isRegistered ? "/dashboard" : "/register");
+        }}
+      />
       <div className="login-safety"><ShieldCheck size={16} /><span>No gas fee. No blockchain transaction. Your private key never leaves MetaMask.</span></div>
     </section>
     <div className="login-proof"><CheckCircle2 size={15} /> Challenge expires in five minutes and can only be used once.</div>

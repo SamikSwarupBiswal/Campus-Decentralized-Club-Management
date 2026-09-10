@@ -10,7 +10,8 @@ import {
   UserPlus,
   Users2,
 } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Button, Card } from "@/components/ui";
 import { events, members } from "@/lib/demo-data";
@@ -19,9 +20,41 @@ import { cn, formatDate, shortAddress } from "@/lib/utils";
 type Tab = "members" | "events";
 
 export default function AdminPage() {
+  const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [tab, setTab] = useState<Tab>("members");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string>();
+
+  useEffect(() => {
+    fetch("/api/auth/session", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.isAdmin) {
+          router.replace("/dashboard");
+        } else {
+          setIsAdmin(true);
+        }
+      })
+      .catch(() => {
+        router.replace("/dashboard");
+      });
+  }, [router]);
+
+  if (isAdmin === null) {
+    return (
+      <div className="page">
+        <PageHeader
+          eyebrow="Authorized operations"
+          title="Admin console"
+          description="Verifying administrator authorization..."
+        />
+        <div style={{ display: "flex", justifyContent: "center", padding: "64px 0" }}>
+          <LoaderCircle size={28} className="spin" />
+        </div>
+      </div>
+    );
+  }
 
   async function demoSubmit(event: FormEvent<HTMLFormElement>, kind: string) {
     event.preventDefault();

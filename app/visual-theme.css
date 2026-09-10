@@ -218,3 +218,24 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .login-remember { display: flex; align-items: flex-start; gap: 12px; margin: 0 0 24px; cursor: pointer; color: #eee; }
 .login-remember input { width: 18px; height: 18px; margin-top: 3px; accent-color: #fff; }
 .login-remember small { display: block; margin-top: 4px; color: #aaa; }
+
+/* Event calendar badges - black font on white rounded boxes */
+.event-calendar,
+.event-detail-date {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+.event-calendar span,
+.event-calendar strong,
+.event-calendar *,
+.event-detail-date span,
+.event-detail-date strong,
+.event-detail-date * {
+  color: #000000 !important;
+}
+
+/* Ensure desktop topbar is never rendered */
+.desktop-topbar {
+  display: none !important;
+}

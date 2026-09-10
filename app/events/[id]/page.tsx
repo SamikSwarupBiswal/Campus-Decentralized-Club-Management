@@ -43,9 +43,9 @@ export default async function EventDetailPage({
       <section className="content-grid">
         <div className="side-stack">
           <Card className="content-card event-detail-card">
-            <div className="event-detail-date">
-              <span>{formatDate(event.date, { month: "short" }).toUpperCase()}</span>
-              <strong>{new Date(`${event.date}T00:00:00`).getDate()}</strong>
+            <div className="event-detail-date" style={{ color: "#000000", background: "#ffffff" }}>
+              <span style={{ color: "#000000" }}>{formatDate(event.date, { month: "short" }).toUpperCase()}</span>
+              <strong style={{ color: "#000000" }}>{new Date(`${event.date}T00:00:00`).getDate()}</strong>
             </div>
             <div className="event-facts">
               <div><CalendarDays size={17} /><span><small>Date</small><strong>{formatDate(event.date, { weekday: "long" })}</strong></span></div>

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyMessage } from "viem";
 import { consumeNonce } from "@/lib/server/nonces";
 import { authVerifySchema } from "@/lib/server/schemas";
-import { setSessionCookie } from "@/lib/server/session";
+import { setSessionCookie, getMemberByWallet, isAdminWallet } from "@/lib/server/session";
 import { authOrigin, checkAuthRequest } from "@/lib/server/auth-request";
 
 export const runtime = "nodejs";
@@ -43,6 +43,20 @@ export async function POST(request: Request) {
       { status: 401 },
     );
   }
-  await setSessionCookie(parsed.data.address, parsed.data.rememberMe);
-  return NextResponse.json({ ok: true, address: parsed.data.address });
+  const member = await getMemberByWallet(parsed.data.address);
+  const isAdmin = isAdminWallet(parsed.data.address);
+  const isRegistered = Boolean(member) || isAdmin;
+
+  await setSessionCookie(parsed.data.address, parsed.data.rememberMe, {
+    isRegistered,
+    name: member?.name,
+  });
+
+  return NextResponse.json({
+    ok: true,
+    address: parsed.data.address,
+    isRegistered,
+    isAdmin,
+    name: member?.name ?? null,
+  });
 }

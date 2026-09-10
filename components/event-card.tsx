@@ -14,9 +14,9 @@ export function EventCard({ event }: { event: ClubEvent }) {
   return (
     <Card className="event-card">
       <div className="event-card-top">
-        <div className="event-calendar">
-          <span>{formatDate(event.date, { month: "short" }).toUpperCase()}</span>
-          <strong>{new Date(`${event.date}T00:00:00`).getDate()}</strong>
+        <div className="event-calendar" style={{ color: "#000000", background: "#ffffff" }}>
+          <span style={{ color: "#000000" }}>{formatDate(event.date, { month: "short" }).toUpperCase()}</span>
+          <strong style={{ color: "#000000" }}>{new Date(`${event.date}T00:00:00`).getDate()}</strong>
         </div>
         <Badge tone={tone}>
           {event.attendanceStatus === "Open" ? "Check-in open" : event.attendanceStatus}

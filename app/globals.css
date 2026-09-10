@@ -308,17 +308,7 @@ a {
 }
 
 .desktop-topbar {
-  position: sticky;
-  z-index: 20;
-  top: 0;
-  display: flex;
-  height: 76px;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  border-bottom: 1px solid rgba(223, 228, 223, 0.8);
-  background: rgba(244, 245, 240, 0.86);
-  backdrop-filter: blur(20px);
+  display: none !important;
 }
 
 .search-shell {
@@ -2079,13 +2069,13 @@ a {
   min-width: 54px;
   padding: 8px 11px;
   border-radius: 12px;
-  color: #fff;
-  background: var(--forest);
+  color: #000000 !important;
+  background: #ffffff !important;
   text-align: center;
 }
 
-.event-calendar span { color: var(--mint); font-size: 11px; font-weight: 800; letter-spacing: .12em; }
-.event-calendar strong { font-family: var(--font-newsreader), serif; font-size: 22px; line-height: 1; }
+.event-calendar span { color: #000000 !important; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.event-calendar strong { color: #000000 !important; font-family: var(--font-newsreader), serif; font-size: 22px; line-height: 1; }
 .event-organizer { display: block; margin-top: 20px; color: var(--positive); font-size: 12px; font-weight: 800; text-transform: uppercase; }
 .event-card h3 { margin: 5px 0 6px; font-family: var(--font-newsreader), serif; font-size: 22px; font-weight: 560; }
 .event-card > p { min-height: 48px; margin: 0; color: var(--muted); font-size: 13px; }
@@ -2121,13 +2111,13 @@ a {
   min-width: 72px;
   padding: 10px 15px;
   border-radius: 15px;
-  color: #fff;
-  background: var(--forest);
+  color: #000000 !important;
+  background: #ffffff !important;
   text-align: center;
 }
 
-.event-detail-date span { color: var(--mint); font-size: 12px; font-weight: 800; letter-spacing: .13em; }
-.event-detail-date strong { font-family: var(--font-newsreader), serif; font-size: 30px; line-height: 1; }
+.event-detail-date span { color: #000000 !important; font-size: 12px; font-weight: 800; letter-spacing: .13em; }
+.event-detail-date strong { color: #000000 !important; font-family: var(--font-newsreader), serif; font-size: 30px; line-height: 1; }
 
 .event-facts {
   display: grid;
