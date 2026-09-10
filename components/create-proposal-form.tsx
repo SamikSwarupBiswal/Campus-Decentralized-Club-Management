@@ -2,7 +2,7 @@
 
 import { Fingerprint, LoaderCircle, ShieldCheck, Wallet } from "lucide-react";
 import { FormEvent, useState } from "react";
-import { parseEther, sha256, stringToBytes, zeroAddress } from "viem";
+import { keccak256, parseEther, stringToBytes, zeroAddress } from "viem";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { Button, Card } from "./ui";
 import { governorAbi, contractAddresses } from "@/lib/contracts";
@@ -24,7 +24,7 @@ export function CreateProposalForm() {
       recipient: form.get("recipient") || zeroAddress,
       amount: form.get("amount") || "0",
     });
-    const metadataHash = sha256(stringToBytes(canonical));
+    const metadataHash = keccak256(stringToBytes(canonical));
     setHash(metadataHash);
 
     if (!contractAddresses.governor || !isConnected) {

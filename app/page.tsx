@@ -1,42 +1,17 @@
 import Link from "next/link";
-import { ArrowRight, Lightbulb, Users, FileCheck2, ArrowUpRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { LandingCompose } from "@/components/landing-compose";
 import { Reveal } from "@/components/reveal";
 
-const steps = [
-  { number: "01", icon: Lightbulb, title: "Propose an idea", copy: "Bring your next workshop, bold idea, or funding request to the collective.", href: "/proposals/new" },
-  { number: "02", icon: Users, title: "Make it collective", copy: "Discuss, decide, and vote together. Every member has an equal say.", href: "/proposals" },
-  { number: "03", icon: FileCheck2, title: "Keep the proof", copy: "Follow the decision. Verify the record. Keep your club accountable.", href: "/admin/integrity" },
-];
+const steps = [["01", "Propose an idea", "Share what you want to do, set the details, and put its fingerprint on-chain."], ["02", "Make it collective", "Discuss, decide, and vote together. Every member has an equal say."], ["03", "Keep the proof", "Follow the decision, verify the record, and keep your club accountable."]];
 
 export default function LandingPage() {
-  return <div className="landing">
+  return <main className="mono-landing">
     <a href="#main-intro" className="skip-link">Skip to content</a>
-    <header className="landing-nav">
-      <Link className="landing-logo" href="/" aria-label="Campus DAO home">Campus DAO<span className="logo-dot" /></Link>
-      <nav aria-label="Site navigation"><a href="#how-it-works">How it works</a><Link href="/proposals">Governance</Link></nav>
-      <Link className="landing-button" href="/dashboard">Launch app <ArrowUpRight size={17} /></Link>
-    </header>
-    <section className="landing-hero" id="main-intro">
-      <div className="hero-copy">
-        <h1><span className="cut-line"><span>Your campus.</span></span><span className="cut-line"><span>Your voice.</span></span><span className="cut-line"><span>On record.</span></span></h1>
-        <p>A shared space to propose ideas, make decisions,<br className="desktop-break" /> and keep your club accountable.</p>
-        <div className="hero-actions"><Link href="/dashboard" className="landing-button">Enter the club <ArrowRight size={18} /></Link><a href="#how-it-works" className="landing-button outline">Explore the process</a></div>
-      </div>
-      <div className="orbit-scene" role="img" aria-label="Propose, vote, and verify orbit a shared Campus DAO">
-        <div className="orbit-ring ring-one" /><div className="orbit-ring ring-two" /><div className="orbit-ring ring-three" />
-        <div className="orbit-axis" />
-        <div className="orbit-center">C</div>
-        <span className="orbit-node node-propose"><i />Propose</span>
-        <span className="orbit-node node-vote"><i />Vote</span>
-        <span className="orbit-node node-verify"><i />Verify</span>
-      </div>
-      <span className="hero-footnote">Clubs. People. Progress.</span>
-    </section>
-    <div className="belief-band"><span className="band-dot" /><p>One member, one vote. Every decision, verifiable.</p><span className="band-dot" /></div>
-    <section className="process-section" id="how-it-works" aria-label="How Campus DAO works">
-      {steps.map(step => <Reveal key={step.number}><Link className="process-step" href={step.href}><span className="step-number">{step.number}</span><step.icon className="step-icon" size={22} strokeWidth={1.3} /><div><h2>{step.title}</h2><p>{step.copy}</p></div><ArrowRight className="step-arrow" size={25} strokeWidth={1} /></Link></Reveal>)}
-    </section>
-    <Reveal><section className="landing-closing"><div className="closing-curve" /><h2>Build a club you believe in.</h2><p>Real people. Shared decisions. A more transparent campus.</p><Link href="/dashboard" className="landing-button">Enter the club <ArrowRight size={18} /></Link></section></Reveal>
-    <footer className="landing-footer"><Link href="/">Campus DAO</Link><span>Built for participation.</span><Link href="/settings">Polygon Amoy · Testnet only <ArrowUpRight size={14} /></Link></footer>
-  </div>;
+    <header className="mono-nav"><Link href="/" className="mono-logo">Campus DAO</Link><nav><a href="#how-it-works">How it works</a><Link href="/proposals">Governance</Link></nav><Link href="/login" className="mono-signin">Sign in</Link></header>
+    <section className="mono-hero" id="main-intro"><div className="mono-copy"><h1>Your campus.<br />Your voice.<br />On record.</h1><p>A decentralized home for college clubs to propose, decide, and prove what happens next.</p></div><LandingCompose /></section>
+    <Reveal><section id="how-it-works" className="mono-steps">{steps.map(([number,title,copy]) => <article key={number}><div><span>{number}</span><i /></div><h2>{title}</h2><p>{copy}</p></article>)}</section></Reveal>
+    <Reveal><section className="mono-close"><h2>Build a club you believe in.</h2><p>Sign in to start proposing, voting, and building together.</p><Link href="/login" className="mono-cta">Sign in with MetaMask <ArrowRight size={18} /></Link><small>Polygon Amoy · Testnet only</small></section></Reveal>
+    <footer className="mono-footer"><strong>Campus DAO</strong><div><a href="#how-it-works">How it works</a><Link href="/proposals">Governance</Link><span>Polygon Amoy · Testnet only</span></div></footer>
+  </main>;
 }

@@ -63,7 +63,7 @@ The normalized, checkable form of these requirements is in `.planning/REQUIREMEN
 ## Integrity and Security
 
 - **INT-01** — Attendance uses canonical serialization. **Acceptance:** Addresses are normalized, records deduplicated and sorted, and event ID included. **Source:** `docs/PRD.md`, section 22.
-- **INT-02** — Canonical attendance produces SHA-256. **Acceptance:** Identical logical records always produce the same hash. **Source:** `docs/PRD.md`, sections 22 and 23.
+- **INT-02** — Canonical attendance produces Keccak-256. **Acceptance:** Identical logical records always produce the same Ethereum-native hash. **Source:** user architecture ruling superseding `docs/PRD.md`, sections 22 and 23.
 - **INT-03** — Final attendance is anchored on-chain. **Acceptance:** Admin records one proof for the event in `AttendanceRegistry`. **Source:** `docs/PRD.md`, sections 8.4 and 22.
 - **INT-04** — Current attendance can be compared with its proof. **Acceptance:** The application recomputes and compares MongoDB and blockchain hashes. **Source:** `docs/PRD.md`, section 23.
 - **INT-05** — Integrity status is explicit. **Acceptance:** Match displays verified; mismatch displays modified/tampered. **Source:** `docs/PRD.md`, section 23.

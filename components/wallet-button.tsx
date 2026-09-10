@@ -6,7 +6,7 @@ import { useAccount, useConnect, useDisconnect, useSignMessage, useSwitchChain }
 import { polygonAmoy } from "@/lib/chain";
 import { shortAddress } from "@/lib/utils";
 
-export function WalletButton({ compact = false }: { compact?: boolean }) {
+export function WalletButton({ compact = false, onSignedIn }: { compact?: boolean; onSignedIn?: (address: string) => void }) {
   const { address, chainId, isConnected } = useAccount();
   const { connectAsync, connectors } = useConnect();
   const { disconnectAsync } = useDisconnect();
@@ -59,6 +59,7 @@ export function WalletButton({ compact = false }: { compact?: boolean }) {
         throw new Error("Wallet changed. Please sign in again.");
       }
       setSignedIn(result.address);
+      onSignedIn?.(result.address);
     } catch (err) {
       setError(err instanceof Error ? err.message.split("\n")[0] : "Wallet request failed. Please retry.");
     } finally { setBusy(false); }

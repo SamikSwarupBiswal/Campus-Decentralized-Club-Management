@@ -143,7 +143,7 @@ export default async function ProposalDetailPage({
               <strong><ShieldCheck size={16} /> Sample integrity display</strong>
               <p>This preview has not been compared with a deployed on-chain fingerprint.</p>
             </div>
-            <span className="hash-label">SHA-256 metadata hash</span>
+            <span className="hash-label">Keccak-256 metadata hash</span>
             <div className="hash-box">
               <Fingerprint size={16} />
               {proposal.metadataHash}

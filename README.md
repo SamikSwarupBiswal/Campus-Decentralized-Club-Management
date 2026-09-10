@@ -53,9 +53,11 @@ Netlify uses `netlify.toml`. Configure its environment variables before deployin
 
 See [docs/CONTRACTS.md](docs/CONTRACTS.md) for a short explanation of all four contracts, percentage rules, deployment order, and limitations.
 
+Implementation decision: proposal metadata, attendance fingerprints, event IDs, and Solidity role identifiers use Ethereum-native Keccak-256. HMAC-SHA-256 remains limited to signing server session cookies; it is not used as an on-chain content hash. This supersedes the PRD's SHA-256 content-hash wording.
+
 ## UI direction
 
-Charcoal, warm white, electric lime, cut-reveal headings, orbital motion, scroll reveals, and hover feedback. Motion respects reduced-motion preferences. Component ideas were inspired by [21st.dev text reveals](https://21st.dev/@danielpetho/components/vertical-cut-reveal) and [animated paths](https://21st.dev/@minhxthanh/components/animated-infinity-background); the implementation is original CSS/React.
+True black, white, and neutral grey define the landing and workspace. The landing uses the interactive Compose proposal component supplied for this project, with restrained focus-ring motion and scroll reveals. Motion respects reduced-motion preferences.
 
 ## Remaining product work
 

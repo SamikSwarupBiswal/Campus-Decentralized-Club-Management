@@ -123,7 +123,7 @@ Plans:
 **Depends on**: Phase 3, Phase 4, Phase 6
 **Requirements**: INT-01, INT-02, INT-03, INT-04, INT-05, SEC-01, SEC-02, SEC-03, SEC-04
 **Success Criteria** (what must be TRUE):
-  1. The same event attendance set always produces the same canonical SHA-256 hash regardless of input ordering or address casing.
+  1. The same event attendance set always produces the same canonical Keccak-256 hash regardless of input ordering or address casing.
   2. An authorized administrator can anchor one final attendance proof on Polygon Amoy.
   3. Users can recompute integrity and clearly see whether MongoDB data matches or differs from the on-chain proof.
   4. Protected APIs and contracts reject unauthorized, invalid, duplicate, replayed, and reentrant operations in automated tests.

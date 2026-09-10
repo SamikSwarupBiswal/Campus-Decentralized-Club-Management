@@ -44,7 +44,7 @@ describe("Campus DAO", function () {
   it("accepts exactly 60 percent YES approval", async function () {
     const { alice, bob, carol, dave, outsider, membership, governor } = await deployFixture();
     await membership.registerMember(outsider.address);
-    await governor.connect(alice).createProposal(ethers.sha256(ethers.toUtf8Bytes("exact-sixty")), ethers.ZeroAddress, 0, 20);
+    await governor.connect(alice).createProposal(ethers.keccak256(ethers.toUtf8Bytes("exact-sixty")), ethers.ZeroAddress, 0, 20);
     for (const member of [alice, bob, carol]) await governor.connect(member).castVote(1, 1);
     for (const member of [dave, outsider]) await governor.connect(member).castVote(1, 0);
     await mineBlocks(21);
@@ -144,7 +144,7 @@ describe("Campus DAO", function () {
   it("stores one immutable attendance proof per event", async function () {
     const { admin, outsider, attendance } = await deployFixture();
     const eventId = ethers.keccak256(ethers.toUtf8Bytes("evt-design-critique"));
-    const attendanceHash = ethers.sha256(
+    const attendanceHash = ethers.keccak256(
       ethers.toUtf8Bytes('{"eventId":"evt-design-critique","wallets":[]}'),
     );
 
@@ -208,7 +208,7 @@ describe("Campus DAO", function () {
     await expect(ethers.deployContract("AttendanceRegistry", [ethers.ZeroAddress])).to.be.reverted;
     const { attendance } = await deployFixture();
     const eventId = ethers.id("event");
-    await attendance.finalizeAttendance(eventId, ethers.sha256(ethers.toUtf8Bytes("original")));
-    expect(await attendance.verifyAttendance(eventId, ethers.sha256(ethers.toUtf8Bytes("edited")))).to.equal(false);
+    await attendance.finalizeAttendance(eventId, ethers.keccak256(ethers.toUtf8Bytes("original")));
+    expect(await attendance.verifyAttendance(eventId, ethers.keccak256(ethers.toUtf8Bytes("edited")))).to.equal(false);
   });
 });

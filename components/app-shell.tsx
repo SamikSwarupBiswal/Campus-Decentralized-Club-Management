@@ -103,7 +103,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     </>
   );
 
-  if (pathname === "/") return <main>{children}</main>;
+  if (pathname === "/" || pathname === "/login") return <>{children}</>;
 
   return (
     <div className="app-shell">

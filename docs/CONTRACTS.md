@@ -32,9 +32,9 @@ Unlike the previous main2 contract, this is an actual Test POL transfer, not an 
 
 ## 4. AttendanceRegistry — has the record changed?
 
-An authorized finalizer stores one SHA-256 attendance fingerprint for an event. An existing proof cannot be overwritten. `verifyAttendance` compares a supplied fingerprint with that original value. Raw attendance remains in MongoDB.
+An authorized finalizer stores one Keccak-256 attendance fingerprint for an event. An existing proof cannot be overwritten. `verifyAttendance` compares a supplied fingerprint with that original value. Raw attendance remains in MongoDB.
 
-Hashing happens off-chain: normalize wallets, remove duplicates, sort, include the event ID, serialize, then SHA-256. The proof detects later modifications; it cannot prove the original attendance was truthful.
+Hashing happens off-chain: normalize wallets, remove duplicates, sort, include the event ID, serialize, then Keccak-256. This intentionally follows Ethereum's native hashing convention. The proof detects later modifications; it cannot prove the original attendance was truthful.
 
 ## Deployment order
 

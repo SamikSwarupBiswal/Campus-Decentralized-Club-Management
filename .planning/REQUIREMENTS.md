@@ -66,7 +66,7 @@
 ### Integrity and Security
 
 - [ ] **INT-01**: Attendance finalization normalizes wallet addresses, removes duplicates, sorts deterministically, includes the event ID, and uses canonical serialization.
-- [ ] **INT-02**: The canonical attendance payload produces a deterministic SHA-256 hash.
+- [ ] **INT-02**: The canonical attendance payload produces a deterministic Ethereum-native Keccak-256 hash.
 - [ ] **INT-03**: An authorized administrator can finalize an event's attendance hash once in `AttendanceRegistry` on Polygon Amoy.
 - [ ] **INT-04**: The application can recompute the current MongoDB attendance hash and compare it with the authoritative on-chain proof.
 - [ ] **INT-05**: The integrity view clearly distinguishes verified attendance from modified or mismatched records.

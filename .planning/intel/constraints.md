@@ -57,7 +57,7 @@
 ## CON-10 — Attendance finality
 
 - **Type:** integrity protocol
-- **Content:** Attendance must be normalized, deduplicated, sorted, canonically serialized, SHA-256 hashed, and anchored in `AttendanceRegistry`.
+- **Content:** Attendance must be normalized, deduplicated, sorted, canonically serialized, Keccak-256 hashed, and anchored in `AttendanceRegistry`. This implementation decision supersedes the PRD's SHA-256 wording.
 - **Source:** `docs/PRD.md`
 
 ## CON-11 — Secret isolation

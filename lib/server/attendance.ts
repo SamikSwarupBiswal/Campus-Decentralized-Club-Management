@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { keccak256, stringToBytes } from "viem";
 import type { AttendanceRecord } from "@/lib/types";
 import { getDatabase } from "./mongodb";
 
@@ -58,10 +58,9 @@ export async function canonicalAttendance(eventId: string) {
         .map((record) => record.wallet);
   const normalized = [...new Set(wallets.map((wallet) => wallet.toLowerCase()))].sort();
   const canonical = JSON.stringify({ eventId, wallets: normalized });
-  const digest = createHash("sha256").update(canonical).digest("hex");
   return {
     canonical,
     wallets: normalized,
-    hash: `0x${digest}` as `0x${string}`,
+    hash: keccak256(stringToBytes(canonical)),
   };
 }

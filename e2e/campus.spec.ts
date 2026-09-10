@@ -7,12 +7,21 @@ test("landing links, workspace, and responsive layout", async ({ page }) => {
   await page.setViewportSize({ width: 1536, height: 1024 });
   await page.waitForTimeout(2500); // Allow the intentional entry animation to finish for visual evidence.
   await page.screenshot({ path: "test-results/landing-desktop.png", fullPage: true });
-  await page.getByRole("link", { name: "Explore the process" }).click();
+  await page.getByRole("link", { name: "How it works" }).first().click();
   await expect(page.getByRole("heading", { name: "Make it collective" })).toBeInViewport();
-  await page.getByRole("link", { name: "Launch app" }).click();
-  await expect(page).toHaveURL(/dashboard/);
+  const composer = page.getByRole("textbox", { name: "Compose a proposal" });
+  await composer.fill("Request /fu");
+  await page.getByRole("button", { name: /\/fund/ }).click();
+  await expect(composer).toHaveValue("Request /fund ");
+  await page.getByRole("button", { name: "Create proposal" }).click();
+  await expect(page).toHaveURL(/login/);
+  await expect(page.getByRole("heading", { name: "Enter with MetaMask." })).toBeVisible();
+  await page.setViewportSize({ width: 1536, height: 1024 });
+  await page.screenshot({ path: "test-results/login-desktop.png", fullPage: true });
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/login/);
   await expect(page.getByRole("button", { name: "Connect MetaMask" })).toBeVisible();
-  for (const path of ["/", "/dashboard", "/proposals", "/events", "/attendance", "/members", "/treasury", "/settings"]) {
+  for (const path of ["/", "/login"]) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(path);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
@@ -71,12 +80,15 @@ test("wallet UI connects, signs in, and clears the server session on sign-out", 
     };
     Object.defineProperty(window, "ethereum", { value: provider });
   }, { address: wallet.address });
-  await page.goto("/dashboard");
+  await page.goto("/login");
   await page.getByRole("button", { name: "Connect MetaMask" }).click();
   await page.getByRole("button", { name: "Sign in with wallet" }).click();
-  await expect(page.getByText("Signed in · Sign out above")).toBeVisible();
+  await expect(page).toHaveURL(/dashboard/);
+  await expect(page.getByText("A little less permission.")).toBeVisible();
   expect((await (await page.request.get("/api/auth/session")).json()).address).toBe(wallet.address.toLowerCase());
   await page.getByRole("button", { name: "Sign out and disconnect" }).click();
-  await expect(page.getByRole("button", { name: "Connect MetaMask" })).toBeVisible();
+  await expect.poll(async () => (await (await page.request.get("/api/auth/session")).json()).address).toBeNull();
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/login/);
   expect((await (await page.request.get("/api/auth/session")).json()).address).toBeNull();
 });
