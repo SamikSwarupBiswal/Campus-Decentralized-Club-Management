@@ -15,14 +15,24 @@ export const publicClient = createPublicClient({
   transport: fallback(rpcEndpoints.map((url) => http(url))),
 });
 
+import { isMemberRegistered, isAdminWallet } from "@/lib/server/session";
+
 export async function isVerifiedMember(wallet: `0x${string}`) {
-  if (!contractAddresses.membership) {
-    return false;
+  if (isAdminWallet(wallet)) {
+    return true;
   }
-  return publicClient.readContract({
-    address: contractAddresses.membership,
-    abi: membershipAbi,
-    functionName: "isMember",
-    args: [wallet],
-  });
+  if (contractAddresses.membership) {
+    try {
+      const isMember = await publicClient.readContract({
+        address: contractAddresses.membership,
+        abi: membershipAbi,
+        functionName: "isMember",
+        args: [wallet],
+      });
+      if (isMember) return true;
+    } catch {
+      // If contract call fails or reverts, fallback to database check below
+    }
+  }
+  return isMemberRegistered(wallet);
 }

@@ -3,11 +3,12 @@
 import { Clock3, LoaderCircle, QrCode, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
-import { useAccount, useSignMessage } from "wagmi";
+import { useAccount, useConnect, useSignMessage } from "wagmi";
 import { Button, Card } from "./ui";
 
 export function AttendanceQr({ eventId }: { eventId: string }) {
   const { address, isConnected } = useAccount();
+  const { connectAsync, connectors } = useConnect();
   const { signMessageAsync } = useSignMessage();
   const [image, setImage] = useState<string>();
   const [expiresAt, setExpiresAt] = useState<number>();
@@ -26,6 +27,23 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
   async function generate() {
     setError(undefined);
     if (!isConnected || !address) {
+      const isMobile = typeof window !== "undefined" && /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+      const hasInjected = typeof window !== "undefined" && Boolean((window as unknown as { ethereum?: unknown }).ethereum);
+      if (isMobile && !hasInjected) {
+        const dappUrl = window.location.host + window.location.pathname;
+        window.location.href = `https://metamask.app.link/dapp/${dappUrl}`;
+        return;
+      }
+      const connector = connectors.find(c => c.name.toLowerCase().includes("metamask")) || connectors[0];
+      if (connector) {
+        try {
+          await connectAsync({ connector });
+          return;
+        } catch {
+          setError("Connect MetaMask before generating your signed attendance code.");
+          return;
+        }
+      }
       setError("Connect MetaMask before generating your signed attendance code.");
       return;
     }
@@ -43,6 +61,12 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
         expiresAt?: number;
         error?: string;
       };
+      if (response.status === 401) {
+        throw new Error("Please click 'Sign in with wallet' in the sidebar first.");
+      }
+      if (response.status === 403) {
+        throw new Error("Active club membership required. Please register as a member first.");
+      }
       if (!response.ok || !challenge.message || !challenge.expiresAt) {
         throw new Error(challenge.error || "Unable to create challenge");
       }
@@ -59,7 +83,7 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
         await QRCode.toDataURL(payload, {
           width: 560,
           margin: 2,
-          color: { dark: "#173f35", light: "#ffffff" },
+          color: { dark: "#000000", light: "#ffffff" },
           errorCorrectionLevel: "M",
         }),
       );
