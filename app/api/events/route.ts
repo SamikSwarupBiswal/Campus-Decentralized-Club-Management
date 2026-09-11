@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { events } from "@/lib/demo-data";
+import { computeEventAttendanceStatus } from "@/lib/events";
+import { getAllEvents } from "@/lib/server/events";
 import { getDatabase } from "@/lib/server/mongodb";
 import { eventSchema } from "@/lib/server/schemas";
 import { customEvents, requireAdmin } from "@/lib/server/session";
@@ -10,37 +11,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   const db = await getDatabase();
-  let records: ClubEvent[] = [];
-  if (db) {
-    try {
-      records = (await db
-        .collection("events")
-        .find({}, { projection: { _id: 0 } })
-        .sort({ date: 1 })
-        .toArray()) as unknown as ClubEvent[];
-    } catch (e) {
-      console.error("Failed to query events from MongoDB:", e);
-    }
-  }
-
-  const memoryList = Array.from(customEvents.values());
-  const seenIds = new Set<string>();
-  const combined: ClubEvent[] = [];
-
-  for (const ev of [...records, ...memoryList]) {
-    if (ev.id && !seenIds.has(ev.id)) {
-      seenIds.add(ev.id);
-      combined.push(ev);
-    }
-  }
-
-  for (const ev of events) {
-    if (ev.id && !seenIds.has(ev.id)) {
-      seenIds.add(ev.id);
-      combined.push(ev);
-    }
-  }
-
+  const combined = await getAllEvents();
   return NextResponse.json({ events: combined, mode: db ? "database" : "demo" });
 }
 
@@ -53,12 +24,16 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const record: ClubEvent = {
+  const baseRecord: ClubEvent = {
     id: `evt-${randomUUID().slice(0, 8)}`,
     ...parsed.data,
     attendanceStatus: "Upcoming",
     attendees: 0,
     capacity: 50,
+  };
+  const record: ClubEvent = {
+    ...baseRecord,
+    attendanceStatus: computeEventAttendanceStatus(baseRecord),
   };
 
   const db = await getDatabase();

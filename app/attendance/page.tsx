@@ -12,43 +12,9 @@ import Link from "next/link";
 import { AttendanceScanner } from "@/components/attendance-scanner";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Card } from "@/components/ui";
-import { events as demoEvents } from "@/lib/demo-data";
+import { getAllEvents } from "@/lib/server/events";
 import { formatDate } from "@/lib/utils";
-import { getSession, isAdminWallet, customEvents } from "@/lib/server/session";
-import { getDatabase } from "@/lib/server/mongodb";
-import type { ClubEvent } from "@/lib/types";
-
-async function getAllEvents(): Promise<ClubEvent[]> {
-  let dbEvents: ClubEvent[] = [];
-  const db = await getDatabase();
-  if (db) {
-    try {
-      dbEvents = (await db
-        .collection("events")
-        .find({}, { projection: { _id: 0 } })
-        .sort({ date: 1 })
-        .toArray()) as unknown as ClubEvent[];
-    } catch (e) {
-      console.error("Failed to load events in attendance page:", e);
-    }
-  }
-
-  const seen = new Set<string>();
-  const list: ClubEvent[] = [];
-  for (const ev of [...dbEvents, ...Array.from(customEvents.values())]) {
-    if (ev.id && !seen.has(ev.id)) {
-      seen.add(ev.id);
-      list.push(ev);
-    }
-  }
-  for (const ev of demoEvents) {
-    if (ev.id && !seen.has(ev.id)) {
-      seen.add(ev.id);
-      list.push(ev);
-    }
-  }
-  return list;
-}
+import { getSession, isAdminWallet } from "@/lib/server/session";
 
 export default async function AttendancePage() {
   const session = await getSession();
@@ -65,7 +31,7 @@ export default async function AttendancePage() {
       />
 
       <section className="attendance-overview">
-        {currentEvent && (
+        {currentEvent ? (
           <Card className="active-checkin-card">
             <div className="active-checkin-icon"><QrCode size={24} /></div>
             <div>
@@ -75,6 +41,18 @@ export default async function AttendancePage() {
             </div>
             <Link href={`/events/${currentEvent.id}`} className="button button-primary button-md">
               Generate my QR <ArrowUpRight size={15} />
+            </Link>
+          </Card>
+        ) : (
+          <Card className="active-checkin-card">
+            <div className="active-checkin-icon"><Clock3 size={24} /></div>
+            <div>
+              <Badge tone="neutral">No active check-in</Badge>
+              <h2>No events currently in progress</h2>
+              <p>Check-in opens during scheduled event windows. See upcoming club sessions.</p>
+            </div>
+            <Link href="/events" className="button button-secondary button-md">
+              View events <ArrowUpRight size={15} />
             </Link>
           </Card>
         )}

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { computeEventAttendanceStatus, isEventAttendanceOpen } from "@/lib/events";
+import { getEventById } from "@/lib/server/events";
 import { issueNonce, replaceNonceMessage } from "@/lib/server/nonces";
 import { attendanceChallengeSchema } from "@/lib/server/schemas";
 import { getSession } from "@/lib/server/session";
@@ -14,6 +16,29 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message || "Invalid request" },
       { status: 400 },
+    );
+  }
+  const event = await getEventById(parsed.data.eventId);
+  if (!event) {
+    return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  }
+  if (!isEventAttendanceOpen(event)) {
+    const status = computeEventAttendanceStatus(event);
+    if (status === "Upcoming") {
+      return NextResponse.json(
+        { error: `Attendance check-in is not open yet. Check-in opens on ${event.date} at ${event.startTime}.` },
+        { status: 403 },
+      );
+    }
+    if (status === "Finalized") {
+      return NextResponse.json(
+        { error: "Attendance check-in for this event is finalized and closed." },
+        { status: 403 },
+      );
+    }
+    return NextResponse.json(
+      { error: `Attendance check-in for this event has closed (ended on ${event.date} at ${event.endTime}).` },
+      { status: 403 },
     );
   }
   const session = await getSession();

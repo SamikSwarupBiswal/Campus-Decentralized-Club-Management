@@ -27,6 +27,8 @@ export interface Proposal {
   metadataHash: `0x${string}`;
 }
 
+export type EventAttendanceStatus = "Upcoming" | "Open" | "Finalized" | "Closed";
+
 export interface ClubEvent {
   id: string;
   name: string;
@@ -37,7 +39,7 @@ export interface ClubEvent {
   venue: string;
   organizer: string;
   proposalId?: string;
-  attendanceStatus: "Upcoming" | "Open" | "Finalized";
+  attendanceStatus: EventAttendanceStatus;
   attendees: number;
   capacity: number;
 }

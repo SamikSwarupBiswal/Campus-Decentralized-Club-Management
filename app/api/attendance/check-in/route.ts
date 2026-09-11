@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { verifyMessage } from "viem";
+import { isEventAttendanceOpen } from "@/lib/events";
 import {
   attendanceExists,
   saveAttendance,
 } from "@/lib/server/attendance";
 import { isVerifiedMember } from "@/lib/server/blockchain";
+import { getEventById } from "@/lib/server/events";
 import { consumeNonce } from "@/lib/server/nonces";
 import { attendanceCheckInSchema } from "@/lib/server/schemas";
 import { requireAdmin } from "@/lib/server/session";
@@ -21,12 +23,31 @@ export async function POST(request: Request) {
     );
   }
   const data = parsed.data;
+  const event = await getEventById(data.eventId);
+  if (!event) {
+    return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  }
+  if (!isEventAttendanceOpen(event)) {
+    return NextResponse.json(
+      { error: "Attendance check-in window has closed for this event" },
+      { status: 403 },
+    );
+  }
   if (Math.abs(Date.now() - data.timestamp) > 60_000) {
     return NextResponse.json({ error: "Attendance QR has expired" }, { status: 410 });
   }
+  const expectedMessage = data.message || [
+    "Campus DAO Attendance",
+    `Event: ${data.eventId}`,
+    `Wallet: ${data.wallet}`,
+    `Timestamp: ${data.timestamp}`,
+    `Nonce: ${data.nonce}`,
+    "",
+    "Valid for 60 seconds. Signing does not initiate a transaction.",
+  ].join("\n");
   const validSignature = await verifyMessage({
     address: data.wallet,
-    message: data.message,
+    message: expectedMessage,
     signature: data.signature as `0x${string}`,
   }).catch(() => false);
   if (!validSignature) {
@@ -37,7 +58,7 @@ export async function POST(request: Request) {
     !nonce ||
     nonce.wallet.toLowerCase() !== data.wallet ||
     nonce.eventId !== data.eventId ||
-    nonce.message !== data.message
+    (nonce.message !== expectedMessage && nonce.message !== data.message)
   ) {
     return NextResponse.json(
       { error: "Nonce is expired, invalid, or already consumed" },

@@ -30,11 +30,21 @@ export function AttendanceScanner() {
     async function start() {
       const { Html5Qrcode } = await import("html5-qrcode");
       if (cancelled) return;
-      const scanner = new Html5Qrcode("attendance-reader");
+      const scanner = new Html5Qrcode("attendance-reader", {
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        verbose: false,
+      });
       scannerRef.current = scanner;
       await scanner.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 230, height: 230 } },
+        {
+          fps: 15,
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const edge = Math.max(220, Math.floor(minEdge * 0.8));
+            return { width: edge, height: edge };
+          },
+        },
         (decodedText) => {
           setPayload(decodedText);
           void verify(decodedText);
@@ -61,10 +71,20 @@ export function AttendanceScanner() {
     setResult(undefined);
     try {
       const parsed = JSON.parse(value) as Record<string, unknown>;
+      const body = ("e" in parsed || "w" in parsed)
+        ? {
+            eventId: parsed.eventId ?? parsed.e,
+            wallet: parsed.wallet ?? parsed.w,
+            timestamp: parsed.timestamp ?? parsed.t,
+            nonce: parsed.nonce ?? parsed.n,
+            signature: parsed.signature ?? parsed.s,
+            message: parsed.message ?? parsed.m,
+          }
+        : parsed;
       const response = await fetch("/api/attendance/check-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed),
+        body: JSON.stringify(body),
       });
       const data = (await response.json()) as {
         ok?: boolean;

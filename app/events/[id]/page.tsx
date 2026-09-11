@@ -13,36 +13,13 @@ import { AttendanceQr } from "@/components/attendance-qr";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Card } from "@/components/ui";
 import { events } from "@/lib/demo-data";
-import { getDatabase } from "@/lib/server/mongodb";
-import { customEvents } from "@/lib/server/session";
+import { getEventById } from "@/lib/server/events";
 import { formatDate } from "@/lib/utils";
-import type { ClubEvent } from "@/lib/types";
 
 export const dynamicParams = true;
 
 export function generateStaticParams() {
   return events.map((event) => ({ id: event.id }));
-}
-
-async function findEvent(id: string): Promise<ClubEvent | null> {
-  const demo = events.find((item) => item.id === id);
-  if (demo) return demo;
-
-  if (customEvents.has(id)) {
-    return customEvents.get(id)!;
-  }
-
-  const db = await getDatabase();
-  if (db) {
-    try {
-      const doc = await db.collection("events").findOne({ id }, { projection: { _id: 0 } });
-      if (doc) return doc as unknown as ClubEvent;
-    } catch (e) {
-      console.error("Failed to query event from MongoDB:", e);
-    }
-  }
-
-  return null;
 }
 
 export default async function EventDetailPage({
@@ -51,7 +28,7 @@ export default async function EventDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const event = await findEvent(id);
+  const event = await getEventById(id);
   if (!event) notFound();
 
   return (
@@ -101,9 +78,9 @@ export default async function EventDetailPage({
           )}
         </div>
         <aside className="side-stack">
-          {event.attendanceStatus !== "Finalized" ? (
+          {event.attendanceStatus === "Open" ? (
             <AttendanceQr eventId={event.id} />
-          ) : (
+          ) : event.attendanceStatus === "Finalized" ? (
             <Card className="side-card">
               <span className="section-kicker">Attendance closed</span>
               <h2>Final proof recorded</h2>
@@ -111,6 +88,22 @@ export default async function EventDetailPage({
                 <strong><ShieldCheck size={16} /> Attendance verified</strong>
                 <p>The canonical attendance hash matches the proof stored on Ethereum Sepolia.</p>
               </div>
+            </Card>
+          ) : event.attendanceStatus === "Upcoming" ? (
+            <Card className="side-card">
+              <span className="section-kicker">Attendance not open</span>
+              <h2>Check-in opens soon</h2>
+              <p className="section-description">
+                Attendance QR passes can only be generated during the event window ({formatDate(event.date)} from {event.startTime} to {event.endTime}).
+              </p>
+            </Card>
+          ) : (
+            <Card className="side-card">
+              <span className="section-kicker">Attendance closed</span>
+              <h2>Event has ended</h2>
+              <p className="section-description">
+                The attendance check-in window for this event closed on {formatDate(event.date)} at {event.endTime}.
+              </p>
             </Card>
           )}
           <Card className="side-card">

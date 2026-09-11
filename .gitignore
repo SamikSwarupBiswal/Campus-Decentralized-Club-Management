@@ -36,3 +36,5 @@ next-env.d.ts
 /playwright-report/
 /tmp/
 /.vercel/
+/.codex-remote-attachments/
+

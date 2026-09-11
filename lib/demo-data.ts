@@ -92,6 +92,21 @@ export const proposals: Proposal[] = [
 
 export const events: ClubEvent[] = [
   {
+    id: "evt-campus-hacklab",
+    name: "Campus HackLab & Dev Session",
+    description:
+      "Open collaboration, smart contract debugging, and project office hours.",
+    date: new Date().toISOString().slice(0, 10),
+    startTime: "00:00",
+    endTime: "23:59",
+    venue: "Innovation Hub · Room 101",
+    organizer: "Campus DAO",
+    proposalId: "prop-104",
+    attendanceStatus: "Open",
+    attendees: 18,
+    capacity: 60,
+  },
+  {
     id: "evt-open-source-night",
     name: "Open Source Night",
     description:
@@ -116,7 +131,7 @@ export const events: ClubEvent[] = [
     endTime: "17:00",
     venue: "Robotics Lab · Block A",
     organizer: "Robotics Club",
-    attendanceStatus: "Open",
+    attendanceStatus: "Closed",
     attendees: 47,
     capacity: 64,
   },

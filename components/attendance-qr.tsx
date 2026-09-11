@@ -7,7 +7,7 @@ import { useAccount, useConnect, useSignMessage } from "wagmi";
 import { Button, Card } from "./ui";
 
 export function AttendanceQr({ eventId }: { eventId: string }) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector: activeConnector } = useAccount();
   const { connectAsync, connectors } = useConnect();
   const { signMessageAsync } = useSignMessage();
   const [image, setImage] = useState<string>();
@@ -27,6 +27,7 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
   async function generate() {
     setError(undefined);
     let targetAddress = address;
+    let targetConnector = activeConnector;
 
     if (!isConnected || !targetAddress) {
       const isMobile = typeof window !== "undefined" && /android|iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -42,6 +43,7 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
           setLoading(true);
           const conn = await connectAsync({ connector });
           targetAddress = conn.accounts[0];
+          targetConnector = connector;
         } catch {
           setLoading(false);
           setError("Connect MetaMask before generating your signed attendance code.");
@@ -75,13 +77,16 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
       if (!response.ok || !challenge.message || !challenge.expiresAt) {
         throw new Error(challenge.error || "Unable to create challenge");
       }
-      const signature = await signMessageAsync({ message: challenge.message });
+      const signature = await signMessageAsync({
+        message: challenge.message,
+        account: targetAddress,
+        connector: targetConnector,
+      });
       const payload = JSON.stringify({
         eventId,
-        wallet: address,
+        wallet: targetAddress,
         timestamp: challenge.timestamp,
         nonce: challenge.nonce,
-        message: challenge.message,
         signature,
       });
       setImage(
@@ -89,7 +94,7 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
           width: 560,
           margin: 2,
           color: { dark: "#000000", light: "#ffffff" },
-          errorCorrectionLevel: "M",
+          errorCorrectionLevel: "L",
         }),
       );
       setExpiresAt(challenge.expiresAt);
