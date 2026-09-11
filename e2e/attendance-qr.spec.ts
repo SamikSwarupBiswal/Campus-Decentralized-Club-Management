@@ -135,7 +135,7 @@ test("admin scans attendee QR and sees the updated list of members who gave atte
   // 6. Verify success banner and attendee list display
   await expect(page.getByText("Attendance verified & recorded!")).toBeVisible();
   await expect(page.getByText("Checked-in Attendees")).toBeVisible();
-  await expect(page.getByText("Aarav Gupta")).toBeVisible();
+  await expect(page.locator(".attendees-roster").getByText("Aarav Gupta")).toBeVisible();
   await expect(page.getByText(/CS24-999/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Scan next pass" })).toBeVisible();
 });

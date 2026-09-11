@@ -153,7 +153,9 @@ export function AttendanceScanner({ initialEventId }: AttendanceScannerProps) {
         current.stop().then(() => current.clear()).catch(() => undefined);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera]);
+
 
   async function verify(value = payload) {
     if (!value.trim()) return;
