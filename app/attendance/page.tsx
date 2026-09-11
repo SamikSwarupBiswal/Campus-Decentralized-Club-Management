@@ -80,7 +80,8 @@ export default async function AttendancePage() {
               The server recovers the signer, checks event membership and expiry,
               consumes the nonce, and rejects duplicate attendance.
             </p>
-            <AttendanceScanner />
+            <AttendanceScanner initialEventId={currentEvent?.id || allEvents[0]?.id} />
+
           </Card>
           <Card className="side-card attendance-flow-card">
             <span className="section-kicker">Verification pipeline</span>

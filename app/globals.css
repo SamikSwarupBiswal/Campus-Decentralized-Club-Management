@@ -2308,19 +2308,114 @@ a {
 
 .scan-result {
   display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  margin-top: 10px;
-  padding: 11px;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
   border-radius: 10px;
+  flex-wrap: wrap;
 }
 
 .scan-result.success { color: var(--positive); background: var(--positive-soft); }
 .scan-result.error { color: var(--negative); background: var(--negative-soft); }
 .scan-result strong,
 .scan-result span { display: block; }
-.scan-result strong { font-size: 13px; }
-.scan-result span { margin-top: 2px; font-size: 12px; }
+.scan-result strong { font-size: 13px; font-weight: 700; }
+.scan-result span { margin-top: 2px; font-size: 12px; opacity: 0.9; }
+.scan-result-icon { flex-shrink: 0; }
+.scan-result-content { flex: 1; min-width: 180px; }
+.scan-next-button { flex-shrink: 0; }
+
+.attendees-roster {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.attendees-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.attendees-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.attendees-title h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.attendees-event-tag {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+
+.refresh-attendees-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.refresh-attendees-btn:hover:not(:disabled) {
+  color: var(--foreground);
+  background: var(--surface);
+}
+
+.attendee-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.attendees-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 16px;
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+
+.attendees-empty p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.attendees-empty span {
+  font-size: 12px;
+}
+
 
 .verification-flow { margin-top: 18px; }
 .verification-flow > div { position: relative; display: grid; grid-template-columns: 30px 1fr; gap: 10px; min-height: 66px; }

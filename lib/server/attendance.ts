@@ -64,3 +64,55 @@ export async function canonicalAttendance(eventId: string) {
     hash: keccak256(stringToBytes(canonical)),
   };
 }
+
+export interface AttendanceAttendee {
+  wallet: string;
+  checkedInAt: string;
+  name?: string;
+  studentId?: string;
+  department?: string;
+  year?: string;
+  role?: string;
+}
+
+export async function getAttendanceList(eventId: string): Promise<AttendanceAttendee[]> {
+  const { getMemberByWallet } = await import("./session");
+  const db = await getDatabase();
+  let rawRecords: Array<{ wallet: string; checkedInAt?: string | Date }>;
+  if (db) {
+    rawRecords = await db
+      .collection<{ wallet: string; checkedInAt?: string | Date }>("attendance")
+      .find({ eventId })
+      .sort({ checkedInAt: -1 })
+      .toArray();
+  } else {
+    rawRecords = memoryAttendance
+      .filter((record) => record.eventId === eventId)
+      .map((r) => ({ wallet: r.wallet, checkedInAt: r.checkedInAt }))
+      .slice()
+      .reverse();
+  }
+
+  const attendees: AttendanceAttendee[] = await Promise.all(
+    rawRecords.map(async (rec) => {
+      const member = await getMemberByWallet(rec.wallet);
+      return {
+        wallet: rec.wallet,
+        checkedInAt:
+          typeof rec.checkedInAt === "string"
+            ? rec.checkedInAt
+            : rec.checkedInAt instanceof Date
+            ? rec.checkedInAt.toISOString()
+            : new Date().toISOString(),
+        name: member?.name,
+        studentId: member?.studentId,
+        department: member?.department,
+        year: member?.year,
+        role: member?.role,
+      };
+    }),
+  );
+
+  return attendees;
+}
+

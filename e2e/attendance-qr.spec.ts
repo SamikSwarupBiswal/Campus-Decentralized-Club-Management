@@ -87,3 +87,56 @@ test("past event on 24 july is closed and rejects attendance challenge", async (
   await expect(page.getByText("Attendance closed").first()).toBeVisible();
   await expect(page.getByText("Event has ended")).toBeVisible();
 });
+
+test("admin scans attendee QR and sees the updated list of members who gave attendance", async ({ page }) => {
+  test.setTimeout(90_000);
+
+  // 1. Create and register a student member
+  const studentWallet = Wallet.createRandom();
+  const studentAuth = await (await page.request.post("/api/auth/challenge", { data: { address: studentWallet.address } })).json();
+  expect((await page.request.post("/api/auth/verify", { data: {
+    address: studentWallet.address, message: studentAuth.message, signature: await studentWallet.signMessage(studentAuth.message),
+  } })).status()).toBe(200);
+  const regRes = await page.request.post("/api/members/register", {
+    data: { name: "Aarav Gupta", studentId: "CS24-999", department: "Computer Science" },
+  });
+  expect(regRes.status()).toBe(200);
+
+  // 2. Member generates valid signed attendance QR payload for the active event
+  const challengeRes = await (await page.request.post("/api/attendance/challenge", {
+    data: { eventId: "evt-campus-hacklab", wallet: studentWallet.address },
+  })).json();
+  const signature = await studentWallet.signMessage(challengeRes.message);
+  const payload = JSON.stringify({
+    eventId: "evt-campus-hacklab",
+    wallet: studentWallet.address,
+    timestamp: challengeRes.timestamp,
+    nonce: challengeRes.nonce,
+    signature,
+  });
+
+  // 3. Now authenticate as Admin (Hardhat account #0)
+  const adminWallet = new Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80");
+  const adminAuth = await (await page.request.post("/api/auth/challenge", { data: { address: adminWallet.address } })).json();
+  expect((await page.request.post("/api/auth/verify", { data: {
+    address: adminWallet.address, message: adminAuth.message, signature: await adminWallet.signMessage(adminAuth.message),
+  } })).status()).toBe(200);
+
+
+  // 4. Admin visits /attendance page
+  await page.goto("/attendance");
+  await expect(page.getByText("Admin check-in")).toBeVisible();
+  await expect(page.getByText("Scan attendance pass")).toBeVisible();
+
+  // 5. Admin pastes QR payload and submits check-in
+  await page.getByPlaceholder('{"eventId":"…","wallet":"0x…","signature":"0x…"}').fill(payload);
+  await page.getByRole("button", { name: "Verify & check in" }).click();
+
+  // 6. Verify success banner and attendee list display
+  await expect(page.getByText("Attendance verified & recorded!")).toBeVisible();
+  await expect(page.getByText("Checked-in Attendees")).toBeVisible();
+  await expect(page.getByText("Aarav Gupta")).toBeVisible();
+  await expect(page.getByText(/CS24-999/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Scan next pass" })).toBeVisible();
+});
+

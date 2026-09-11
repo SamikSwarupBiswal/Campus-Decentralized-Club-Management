@@ -3,6 +3,7 @@ import { verifyMessage } from "viem";
 import { isEventAttendanceOpen } from "@/lib/events";
 import {
   attendanceExists,
+  getAttendanceList,
   saveAttendance,
 } from "@/lib/server/attendance";
 import { isVerifiedMember } from "@/lib/server/blockchain";
@@ -90,10 +91,36 @@ export async function POST(request: Request) {
       { status: 409 },
     );
   }
+  const attendees = await getAttendanceList(data.eventId);
   return NextResponse.json({
     ok: true,
     wallet: data.wallet,
     eventId: data.eventId,
     checkedInAt: new Date().toISOString(),
+    attendees,
   });
 }
+
+export async function GET(request: Request) {
+  if (!(await requireAdmin())) {
+    return NextResponse.json(
+      { error: "Admin wallet authentication required" },
+      { status: 401 },
+    );
+  }
+  const { searchParams } = new URL(request.url);
+  const eventId = searchParams.get("eventId");
+  if (!eventId) {
+    return NextResponse.json(
+      { error: "Missing eventId parameter" },
+      { status: 400 },
+    );
+  }
+  const attendees = await getAttendanceList(eventId);
+  return NextResponse.json({
+    ok: true,
+    eventId,
+    attendees,
+  });
+}
+
