@@ -12,7 +12,9 @@
     "test:e2e": "playwright test",
     "contracts:compile": "hardhat compile",
     "contracts:test": "hardhat test",
-    "contracts:deploy": "hardhat run scripts/deploy.js --network amoy"
+    "contracts:deploy": "hardhat run scripts/deploy.js --network sepolia",
+    "contracts:deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "contracts:deploy:amoy": "hardhat run scripts/deploy.js --network amoy"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.2.0",

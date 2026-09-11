@@ -40,11 +40,11 @@ export default async function SettingsPage() {
           <SettingsSignOut />
         </Card>}
         <Card className="content-card settings-card">
-          <div className="section-heading"><div><span className="section-kicker">Blockchain</span><h2>Polygon Amoy</h2></div><Network size={20} /></div>
-          <div className="info-row"><span>Chain ID</span><strong className="mono">80002</strong></div>
+          <div className="section-heading"><div><span className="section-kicker">Blockchain</span><h2>Ethereum Sepolia</h2></div><Network size={20} /></div>
+          <div className="info-row"><span>Chain ID</span><strong className="mono">11155111</strong></div>
           <div className="info-row"><span>RPC provider</span><strong>{process.env.NEXT_PUBLIC_RPC_URL ? "Environment configured" : "Public fallback"}</strong></div>
-          <div className="info-row"><span>Native test token</span><strong>POL</strong></div>
-          <a href="https://amoy.polygonscan.com" target="_blank" rel="noreferrer" className="text-link">Open explorer <ExternalLink size={14} /></a>
+          <div className="info-row"><span>Native test token</span><strong>ETH</strong></div>
+          <a href="https://sepolia.etherscan.io" target="_blank" rel="noreferrer" className="text-link">Open explorer <ExternalLink size={14} /></a>
         </Card>
         <Card className="content-card settings-card">
           <div className="section-heading"><div><span className="section-kicker">Database</span><h2>MongoDB Atlas</h2></div><Database size={20} /></div>

@@ -32,19 +32,19 @@ export default function TreasuryPage() {
       />
 
       <section className="treasury-hero">
-        <Card className="balance-card">
+        <Card className="balance-card" style={{ color: "#000000", background: "#ffffff" }}>
           <div className="balance-card-head">
-            <div className="balance-icon"><Vault size={21} /></div>
+            <div className="balance-icon" style={{ color: "#000000", background: "rgba(0,0,0,0.08)" }}><Vault size={21} /></div>
             <Badge tone="positive">Governance controlled</Badge>
           </div>
-          <span>Available balance</span>
-          <strong>0.74 <em>POL</em></strong>
-          <div className="fiat-disclaimer">
-            Polygon Amoy Test POL · no monetary value
+          <span style={{ color: "#000000", fontWeight: 600 }}>Available balance</span>
+          <strong style={{ color: "#000000" }}>0.05 <em style={{ color: "#000000" }}>ETH</em></strong>
+          <div className="fiat-disclaimer" style={{ color: "#222222" }}>
+            Ethereum Sepolia Test ETH · no monetary value
           </div>
-          <div className="balance-stats">
-            <div><ArrowDownLeft size={16} /><span>Total received<strong>1.22 POL</strong></span></div>
-            <div><ArrowUpRight size={16} /><span>Total allocated<strong>0.48 POL</strong></span></div>
+          <div className="balance-stats" style={{ borderTop: "1px solid rgba(0,0,0,0.15)" }}>
+            <div><ArrowDownLeft size={16} style={{ color: "#000000" }} /><span style={{ color: "#222222" }}>Total received<strong style={{ color: "#000000" }}>0.05 ETH</strong></span></div>
+            <div><ArrowUpRight size={16} style={{ color: "#000000" }} /><span style={{ color: "#222222" }}>Total allocated<strong style={{ color: "#000000" }}>0.00 ETH</strong></span></div>
           </div>
         </Card>
 
@@ -74,9 +74,9 @@ export default function TreasuryPage() {
       </section>
 
       <section className="treasury-security-grid">
-        <div><LockKeyhole size={17} /><span><strong>No admin withdrawals</strong>Only the governor contract can authorize execution.</span></div>
-        <div><ShieldCheck size={17} /><span><strong>Replay protected</strong>Each approved proposal executes at most once.</span></div>
-        <div><TrendingUp size={17} /><span><strong>Public audit trail</strong>Every transfer remains visible on Polygon Amoy.</span></div>
+        <div style={{ background: "#ffffff", color: "#000000" }}><LockKeyhole size={17} style={{ color: "#000000", background: "rgba(0,0,0,0.08)" }} /><span style={{ color: "#000000" }}><strong style={{ color: "#000000" }}>No admin withdrawals</strong>Only the governor contract can authorize execution.</span></div>
+        <div style={{ background: "#ffffff", color: "#000000" }}><ShieldCheck size={17} style={{ color: "#000000", background: "rgba(0,0,0,0.08)" }} /><span style={{ color: "#000000" }}><strong style={{ color: "#000000" }}>Replay protected</strong>Each approved proposal executes at most once.</span></div>
+        <div style={{ background: "#ffffff", color: "#000000" }}><TrendingUp size={17} style={{ color: "#000000", background: "rgba(0,0,0,0.08)" }} /><span style={{ color: "#000000" }}><strong style={{ color: "#000000" }}>Public audit trail</strong>Every transfer remains visible on Ethereum Sepolia.</span></div>
       </section>
 
       <Card className="content-card transaction-card">
@@ -95,7 +95,7 @@ export default function TreasuryPage() {
             rel="noreferrer"
             className="button button-secondary button-sm"
           >
-            PolygonScan <ExternalLink size={13} />
+            Etherscan <ExternalLink size={13} />
           </a>
         </div>
         <div className="table-scroll">
@@ -119,7 +119,7 @@ export default function TreasuryPage() {
                   </td>
                   <td data-label="Proposal">#{tx.proposalId}</td>
                   <td className="mono" data-label="Recipient">{shortAddress(tx.recipient)}</td>
-                  <td data-label="Amount"><strong>{tx.amount}</strong></td>
+                  <td data-label="Amount"><strong>{tx.amount.replace("POL", "ETH")}</strong></td>
                   <td data-label="Status"><Badge tone="positive">{tx.status}</Badge></td>
                   <td data-label="Explorer">
                     <a className="table-link" href={explorerUrl("tx", tx.txHash)} target="_blank" rel="noreferrer">
@@ -137,7 +137,7 @@ export default function TreasuryPage() {
         <Landmark size={17} />
         <div>
           <strong>Academic testnet demonstration</strong>
-          Campus DAO never handles INR or assets with real-world value. All displayed funds are free Polygon Amoy test tokens.
+          Campus DAO never handles INR or assets with real-world value. All displayed funds are free Ethereum Sepolia test tokens.
         </div>
       </div>
     </div>

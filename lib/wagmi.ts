@@ -1,25 +1,26 @@
 "use client";
-
+ 
 import { QueryClient } from "@tanstack/react-query";
 import { createConfig, fallback, http, injected } from "wagmi";
-import { polygonAmoy } from "@/lib/chain";
+import { sepolia } from "@/lib/chain";
 
 const rpcEndpoints = [
   process.env.NEXT_PUBLIC_RPC_URL,
-  "https://polygon-amoy-bor-rpc.publicnode.com",
-  "https://polygon-amoy.drpc.org",
-  "https://rpc-amoy.polygon.technology",
+  "https://ethereum-sepolia-rpc.publicnode.com",
+  "https://rpc.sepolia.org",
+  "https://sepolia.drpc.org",
+  "https://1rpc.io/sepolia",
 ].filter(Boolean) as string[];
 
 export const wagmiConfig = createConfig({
-  chains: [polygonAmoy],
+  chains: [sepolia],
   connectors: [
     injected({
       shimDisconnect: true,
     }),
   ],
   transports: {
-    [polygonAmoy.id]: fallback(rpcEndpoints.map((url) => http(url))),
+    [sepolia.id]: fallback(rpcEndpoints.map((url) => http(url))),
   },
   ssr: true,
 });

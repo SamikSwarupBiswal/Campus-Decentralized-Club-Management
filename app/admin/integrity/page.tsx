@@ -50,7 +50,7 @@ export default function IntegrityPage() {
       <section className="integrity-hero">
         <Card className="integrity-score-card">
           <div className="integrity-ring"><strong>100%</strong><span>verified</span></div>
-          <div><span className="section-kicker">Current integrity posture</span><h2>All proofs match</h2><p>24 of 24 finalized records match their authoritative Polygon Amoy fingerprints.</p></div>
+          <div><span className="section-kicker">Current integrity posture</span><h2>All proofs match</h2><p>24 of 24 finalized records match their authoritative Ethereum Sepolia fingerprints.</p></div>
           <ShieldCheck size={30} />
         </Card>
         <Card className="integrity-metric"><FileCheck2 size={18} /><span>Proposal proofs<strong>14</strong></span></Card>
@@ -71,7 +71,7 @@ export default function IntegrityPage() {
                 <td data-label="Finalized">{formatDate(proof.date)}</td>
                 <td className="mono" data-label="Canonical hash">{proof.hash.slice(0, 10)}…{proof.hash.slice(-6)}</td>
                 <td data-label="Integrity"><span className="integrity-match"><CheckCircle2 size={13} /> Exact match</span></td>
-                <td data-label="Explorer"><a className="table-link" href="https://amoy.polygonscan.com" target="_blank" rel="noreferrer">View <ExternalLink size={12} /></a></td>
+                <td data-label="Explorer"><a className="table-link" href="https://sepolia.etherscan.io" target="_blank" rel="noreferrer">View <ExternalLink size={12} /></a></td>
               </tr>
             ))}
           </tbody>

@@ -28,6 +28,13 @@ const config: HardhatUserConfig = {
       chainId: 80002,
       accounts: deployerKey ? [deployerKey] : [],
     },
+    sepolia: {
+      url:
+        process.env.SEPOLIA_RPC_URL ||
+        "https://ethereum-sepolia-rpc.publicnode.com",
+      chainId: 11155111,
+      accounts: deployerKey ? [deployerKey] : [],
+    },
   },
   paths: {
     sources: "./contracts",

@@ -1864,11 +1864,9 @@ a {
 }
 
 .balance-card {
-  color: #fff;
-  border: 0;
-  background:
-    radial-gradient(circle at 105% -5%, rgba(215, 243, 107, 0.24), transparent 45%),
-    var(--forest);
+  color: #000000;
+  border: 1px solid var(--line);
+  background: #ffffff;
 }
 
 .balance-card-head {
@@ -1883,15 +1881,16 @@ a {
   height: 39px;
   place-items: center;
   border-radius: 11px;
-  color: var(--mint);
-  background: rgba(255, 255, 255, 0.1);
+  color: #000000;
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .balance-card > span {
   display: block;
   margin-top: 24px;
-  color: rgba(255, 255, 255, 0.66);
+  color: #000000;
   font-size: 13px;
+  font-weight: 600;
 }
 
 .balance-card > strong {
@@ -1899,20 +1898,21 @@ a {
   margin-top: 3px;
   font-family: var(--font-newsreader), serif;
   font-size: 47px;
-  font-weight: 520;
+  font-weight: 600;
   letter-spacing: -0.04em;
+  color: #000000;
 }
 
 .balance-card > strong em {
-  color: var(--mint);
+  color: #000000;
   font-family: var(--font-manrope), sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   font-style: normal;
   font-weight: 700;
 }
 
 .fiat-disclaimer {
-  color: rgba(255, 255, 255, 0.48);
+  color: #111111;
   font-size: 12px;
 }
 
@@ -1922,7 +1922,7 @@ a {
   gap: 10px;
   margin-top: 25px;
   padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.13);
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 .balance-stats > div {
@@ -1932,7 +1932,7 @@ a {
 }
 
 .balance-stats > div > svg {
-  color: var(--mint);
+  color: #000000;
 }
 
 .balance-stats span,
@@ -1940,8 +1940,8 @@ a {
   display: block;
 }
 
-.balance-stats span { color: rgba(255, 255, 255, 0.54); font-size: 11px; }
-.balance-stats strong { margin-top: 2px; color: #fff; font-size: 13px; }
+.balance-stats span { color: #111111; font-size: 11px; font-weight: 500; }
+.balance-stats strong { margin-top: 2px; color: #000000; font-size: 13px; font-weight: 700; }
 
 .chart-key {
   display: flex;
@@ -2018,7 +2018,8 @@ a {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 13px;
-  background: rgba(255, 255, 255, 0.65);
+  background: #ffffff;
+  color: #000000;
 }
 
 .treasury-security-grid svg {
@@ -2027,8 +2028,8 @@ a {
   height: 32px;
   padding: 7px;
   border-radius: 9px;
-  color: var(--positive);
-  background: var(--positive-soft);
+  color: #000000;
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .treasury-security-grid strong,
@@ -2036,8 +2037,16 @@ a {
   display: block;
 }
 
-.treasury-security-grid strong { font-size: 13px; }
-.treasury-security-grid span { color: var(--muted); font-size: 12px; }
+.treasury-security-grid strong { 
+  font-size: 13px; 
+  color: #000000; 
+  font-weight: 700;
+}
+
+.treasury-security-grid span { 
+  color: #000000; 
+  font-size: 12px; 
+}
 
 .transaction-card .section-heading {
   margin-bottom: 11px;

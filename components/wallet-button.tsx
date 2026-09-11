@@ -3,7 +3,7 @@
 import { LoaderCircle, LogOut, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAccount, useConnect, useDisconnect, useSignMessage, useSwitchChain } from "wagmi";
-import { polygonAmoy } from "@/lib/chain";
+import { sepolia } from "@/lib/chain";
 import { shortAddress } from "@/lib/utils";
 
 export function WalletButton({ compact = false, rememberMe = false, onSignedIn }: { compact?: boolean; rememberMe?: boolean; onSignedIn?: (address: string, isRegistered?: boolean) => void }) {
@@ -34,15 +34,30 @@ export function WalletButton({ compact = false, rememberMe = false, onSignedIn }
   async function act() {
     setBusy(true);
     setError("");
+    const isMobile = typeof window !== "undefined" && /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+    const hasInjected = typeof window !== "undefined" && Boolean((window as unknown as { ethereum?: unknown }).ethereum);
+
     try {
       if (!isConnected) {
+        if (isMobile && !hasInjected) {
+          const dappUrl = window.location.host + window.location.pathname;
+          window.location.href = `https://metamask.app.link/dapp/${dappUrl}`;
+          return;
+        }
         const connector = connectors.find(c => c.name.toLowerCase().includes("metamask")) || connectors[0];
-        if (!connector) throw new Error("Install MetaMask or open this site in its mobile browser.");
+        if (!connector) {
+          if (isMobile) {
+            const dappUrl = window.location.host + window.location.pathname;
+            window.location.href = `https://metamask.app.link/dapp/${dappUrl}`;
+            return;
+          }
+          throw new Error("Install MetaMask or open this site in its mobile browser.");
+        }
         await connectAsync({ connector });
         return;
       }
-      if (chainId !== polygonAmoy.id) {
-        await switchChainAsync({ chainId: polygonAmoy.id });
+      if (chainId !== sepolia.id) {
+        await switchChainAsync({ chainId: sepolia.id });
         return;
       }
       if (!address) return;
@@ -62,7 +77,13 @@ export function WalletButton({ compact = false, rememberMe = false, onSignedIn }
       setSignedIn(result.address);
       onSignedIn?.(result.address, result.isRegistered);
     } catch (err) {
-      setError(err instanceof Error ? err.message.split("\n")[0] : "Wallet request failed. Please retry.");
+      const msg = err instanceof Error ? err.message.split("\n")[0] : "Wallet request failed. Please retry.";
+      if (isMobile && (msg.toLowerCase().includes("provider") || msg.toLowerCase().includes("not found"))) {
+        const dappUrl = window.location.host + window.location.pathname;
+        window.location.href = `https://metamask.app.link/dapp/${dappUrl}`;
+        return;
+      }
+      setError(msg);
     } finally { setBusy(false); }
   }
 
@@ -77,7 +98,7 @@ export function WalletButton({ compact = false, rememberMe = false, onSignedIn }
     finally { setBusy(false); }
   }
 
-  const label = signedIn ? shortAddress(signedIn) : !isConnected ? "Connect MetaMask" : chainId !== polygonAmoy.id ? "Switch to Amoy" : "Sign in with wallet";
+  const label = signedIn ? shortAddress(signedIn) : !isConnected ? "Connect MetaMask" : chainId !== sepolia.id ? "Switch to Sepolia" : "Sign in with wallet";
   return <div className="wallet-wrap">
     <button className="wallet-button" onClick={signedIn ? logout : act} disabled={busy} aria-label={signedIn ? "Sign out and disconnect" : label}>
       {busy ? <LoaderCircle size={17} className="spin" /> : signedIn ? <LogOut size={17} /> : <Wallet size={17} />}

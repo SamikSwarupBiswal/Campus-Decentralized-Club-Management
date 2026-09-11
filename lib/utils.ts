@@ -40,5 +40,5 @@ export function proposalParticipation(
 }
 
 export function explorerUrl(type: "tx" | "address", value: string) {
-  return `https://amoy.polygonscan.com/${type}/${value}`;
+  return `https://sepolia.etherscan.io/${type}/${value}`;
 }

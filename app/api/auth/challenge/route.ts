@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     "",
     "Sign this message to prove wallet ownership.",
     `Site: ${authOrigin(request)}`,
-    "Chain ID: 80002",
+    "Chain ID: 11155111",
     `Wallet: ${parsed.data.address}`,
     `Nonce: ${record.nonce}`,
     `Issued At: ${issuedAt.toISOString()}`,

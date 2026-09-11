@@ -24,7 +24,7 @@ export async function GET() {
   return NextResponse.json({
     ok: database !== "unavailable",
     service: "campus-dao",
-    network: { name: "polygon-amoy", chainId: 80002 },
+    network: { name: "ethereum-sepolia", chainId: 11155111 },
     database,
     contracts,
     timestamp: new Date().toISOString(),

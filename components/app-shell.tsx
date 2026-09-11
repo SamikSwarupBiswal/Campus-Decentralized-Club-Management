@@ -112,8 +112,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="sidebar-status">
         <div className="sidebar-status-top">
           <span className="live-dot" />
-          <strong>Polygon Amoy</strong>
-          <span>80002</span>
+          <strong>Ethereum Sepolia</strong>
+          <span>11155111</span>
         </div>
         <p>Club governance, powered by your collective.</p>
         <div>
