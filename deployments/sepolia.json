@@ -1,0 +1,12 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "deployedAt": "2026-09-11T11:00:10.584Z",
+  "deployer": "0x8CCBa8E92ef58e7A204760e647BCFcd1A8A35504",
+  "contracts": {
+    "membership": "0x45075e3574d94FE219B895BF85a2Eebb9Ad961A6",
+    "treasury": "0xCDFE1c306AC1A15D75393fB116d76564A6d891d0",
+    "governor": "0x64a4Db655Fa4AE1b858880BE2E7e3e5339d17d1a",
+    "attendance": "0x4f881569C221391eDb820E4ed649E2402258B2aD"
+  }
+}
