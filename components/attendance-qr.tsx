@@ -26,7 +26,9 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
 
   async function generate() {
     setError(undefined);
-    if (!isConnected || !address) {
+    let targetAddress = address;
+
+    if (!isConnected || !targetAddress) {
       const isMobile = typeof window !== "undefined" && /android|iphone|ipad|ipod/i.test(navigator.userAgent);
       const hasInjected = typeof window !== "undefined" && Boolean((window as unknown as { ethereum?: unknown }).ethereum);
       if (isMobile && !hasInjected) {
@@ -37,22 +39,31 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
       const connector = connectors.find(c => c.name.toLowerCase().includes("metamask")) || connectors[0];
       if (connector) {
         try {
-          await connectAsync({ connector });
-          return;
+          setLoading(true);
+          const conn = await connectAsync({ connector });
+          targetAddress = conn.accounts[0];
         } catch {
+          setLoading(false);
           setError("Connect MetaMask before generating your signed attendance code.");
           return;
         }
+      } else {
+        setError("Connect MetaMask before generating your signed attendance code.");
+        return;
       }
-      setError("Connect MetaMask before generating your signed attendance code.");
+    }
+
+    if (!targetAddress) {
+      setError("Please connect your wallet first.");
       return;
     }
+
     setLoading(true);
     try {
       const response = await fetch("/api/attendance/challenge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId, wallet: address }),
+        body: JSON.stringify({ eventId, wallet: targetAddress }),
       });
       const challenge = (await response.json()) as {
         message?: string;
@@ -61,12 +72,6 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
         expiresAt?: number;
         error?: string;
       };
-      if (response.status === 401) {
-        throw new Error("Please click 'Sign in with wallet' in the sidebar first.");
-      }
-      if (response.status === 403) {
-        throw new Error("Active club membership required. Please register as a member first.");
-      }
       if (!response.ok || !challenge.message || !challenge.expiresAt) {
         throw new Error(challenge.error || "Unable to create challenge");
       }

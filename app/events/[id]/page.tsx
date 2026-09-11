@@ -86,7 +86,7 @@ export default async function EventDetailPage({
             </div>
             <div className="notice">
               <ShieldCheck size={17} />
-              <div><strong>Privacy-preserving proof</strong>Your name and raw attendance remain off-chain. Only a deterministic final event hash is anchored on Polygon Amoy.</div>
+              <div><strong>Privacy-preserving proof</strong>Your name and raw attendance remain off-chain. Only a deterministic final event hash is anchored on Ethereum Sepolia.</div>
             </div>
           </Card>
           {event.proposalId && (
@@ -109,7 +109,7 @@ export default async function EventDetailPage({
               <h2>Final proof recorded</h2>
               <div className="verified-panel proposal-verified">
                 <strong><ShieldCheck size={16} /> Attendance verified</strong>
-                <p>The canonical attendance hash matches the proof stored on Polygon Amoy.</p>
+                <p>The canonical attendance hash matches the proof stored on Ethereum Sepolia.</p>
               </div>
             </Card>
           )}

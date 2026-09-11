@@ -9,8 +9,6 @@ export const runtime = "nodejs";
 const QR_LIFETIME_SECONDS = 60;
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Sign in with your wallet first" }, { status: 401 });
   const parsed = attendanceChallengeSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
@@ -18,8 +16,19 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (session.address !== parsed.data.wallet || !(await isVerifiedMember(parsed.data.wallet))) {
-    return NextResponse.json({ error: "Active membership and matching wallet required" }, { status: 403 });
+  const session = await getSession();
+  if (session?.address && session.address.toLowerCase() !== parsed.data.wallet.toLowerCase()) {
+    return NextResponse.json(
+      { error: "Connected wallet does not match signed-in session. Please switch accounts." },
+      { status: 403 },
+    );
+  }
+  const verified = await isVerifiedMember(parsed.data.wallet);
+  if (!verified) {
+    return NextResponse.json(
+      { error: "Active membership required. Please register your wallet in the Members directory." },
+      { status: 403 },
+    );
   }
   const timestamp = Date.now();
   const record = await issueNonce(

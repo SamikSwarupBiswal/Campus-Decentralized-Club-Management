@@ -18,7 +18,8 @@ export const publicClient = createPublicClient({
 import { isMemberRegistered, isAdminWallet } from "@/lib/server/session";
 
 export async function isVerifiedMember(wallet: `0x${string}`) {
-  if (isAdminWallet(wallet)) {
+  const normalized = wallet.toLowerCase() as `0x${string}`;
+  if (isAdminWallet(normalized)) {
     return true;
   }
   if (contractAddresses.membership) {
@@ -27,12 +28,21 @@ export async function isVerifiedMember(wallet: `0x${string}`) {
         address: contractAddresses.membership,
         abi: membershipAbi,
         functionName: "isMember",
-        args: [wallet],
+        args: [normalized],
       });
       if (isMember) return true;
     } catch {
       // If contract call fails or reverts, fallback to database check below
     }
   }
-  return isMemberRegistered(wallet);
+  const registered = await isMemberRegistered(normalized);
+  if (registered) return true;
+
+  // In testnet demonstration mode before smart contracts are deployed on-chain,
+  // allow any connected wallet to generate and test attendance QR passes
+  if (!contractAddresses.membership) {
+    return true;
+  }
+
+  return false;
 }

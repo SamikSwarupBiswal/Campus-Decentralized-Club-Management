@@ -174,7 +174,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
 
       <main className="main-canvas" data-od-id="main-content">
-        <div className="preview-banner">Preview data is shown on club pages. Wallet sign-in uses a real signature; on-chain actions require configured Amoy contracts.</div>
+        <div className="preview-banner">Preview data is shown on club pages. Wallet sign-in uses a real signature; on-chain actions require configured Sepolia contracts.</div>
         {children}
       </main>
 
