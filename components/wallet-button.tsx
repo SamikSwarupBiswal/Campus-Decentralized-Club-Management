@@ -76,7 +76,6 @@ export function WalletButton({ compact = false, rememberMe = false, onSignedIn }
         throw new Error("No wallet account selected. Please unlock MetaMask.");
       }
 
-      const signingAddress = targetAddress;
       const response = await fetch("/api/auth/challenge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
