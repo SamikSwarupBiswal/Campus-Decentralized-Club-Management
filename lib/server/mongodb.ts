@@ -35,5 +35,7 @@ export async function ensureIndexes() {
       .createIndex({ eventId: 1, wallet: 1 }, { unique: true }),
     db.collection("members").createIndex({ wallet: 1 }, { unique: true }),
     db.collection("events").createIndex({ id: 1 }, { unique: true }),
+    db.collection("proposals").createIndex({ id: 1 }, { unique: true }),
+    db.collection("proposals").createIndex({ onchainId: 1 }, { unique: true }),
   ]);
 }

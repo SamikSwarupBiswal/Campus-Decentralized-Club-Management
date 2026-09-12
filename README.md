@@ -1,6 +1,6 @@
 # Campus DAO
 
-An animated club-governance website built with Next.js, TypeScript, Tailwind, Wagmi/viem, MongoDB, and four small Solidity contracts for Polygon Amoy.
+An animated club-governance website built with Next.js, TypeScript, Tailwind, Wagmi/viem, MongoDB, and four Solidity contracts for Ethereum Sepolia.
 
 `main2` follows the architecture from `main`. The previous Vite/Supabase simulation and its alternative PRD have been replaced. The original requirements are preserved in [docs/PRD.md](docs/PRD.md); [GSD planning](.planning/PROJECT.md) tracks unfinished product work.
 
@@ -30,7 +30,7 @@ Verified on 2026-09-10: production build (Next.js 15.5.25), TypeScript checks, 1
 ## Authentication
 
 1. Connect MetaMask (or use its mobile in-app browser).
-2. Switch to Polygon Amoy, chain ID 80002.
+2. Switch to Ethereum Sepolia, chain ID 11155111.
 3. Sign a server-issued message bound to the site, wallet, nonce, and expiry.
 4. The server verifies the signature, consumes the nonce once, and issues an HttpOnly session cookie.
 5. Signing out deletes the server cookie and disconnects the wallet. Changing wallets clears a mismatched session.
@@ -43,7 +43,7 @@ Copy `.env.example` to `.env.local` for the web app. Set a random `SESSION_SECRE
 
 Production authentication refuses to run without MongoDB and a session secret. Local development may use process-local, short-lived nonces; these disappear on restart. No example member wallet is accepted as real on-chain membership.
 
-Hardhat loads `.env` (or process environment). Keep `AMOY_RPC_URL` and `DEPLOYER_PRIVATE_KEY` there, never in browser variables. Run `npm run contracts:deploy` to deploy to Amoy with a funded testnet wallet. No real money is required.
+Hardhat loads `.env` (or process environment). Keep `SEPOLIA_RPC_URL` and `DEPLOYER_PRIVATE_KEY` there, never in browser variables. Run `npm run contracts:deploy` to deploy to Sepolia with a funded testnet wallet. No real money is required.
 
 `NEXT_PUBLIC_RPC_URL` is visible to browsers by design. If using a browser Alchemy key, restrict its allowed origins and methods. Never put private RPC credentials or deployer keys in `NEXT_PUBLIC_*` values.
 

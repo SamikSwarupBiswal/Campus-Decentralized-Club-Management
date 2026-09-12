@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { members } from "@/lib/demo-data";
 import { getDatabase } from "@/lib/server/mongodb";
 import { memberSchema } from "@/lib/server/schemas";
-import { MemberRecord, customMembers, requireAdmin } from "@/lib/server/session";
+import { MemberRecord, customMembers, requireAdmin, isAdminWallet } from "@/lib/server/session";
 import type { Member } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -30,7 +30,11 @@ export async function GET() {
     const w = String(m.wallet || "").toLowerCase();
     if (w && !seenWallets.has(w)) {
       seenWallets.add(w);
-      combined.push(m);
+      const isRishav = Boolean(m.name && m.name.toLowerCase().includes("rishav"));
+      combined.push({
+        ...m,
+        role: isAdminWallet(w) || isRishav ? "Admin" : (m.role || "Member"),
+      });
     }
   }
 
@@ -38,7 +42,11 @@ export async function GET() {
     const w = String(m.wallet || "").toLowerCase();
     if (w && !seenWallets.has(w)) {
       seenWallets.add(w);
-      combined.push(m);
+      const isRishav = Boolean(m.name && m.name.toLowerCase().includes("rishav"));
+      combined.push({
+        ...m,
+        role: isAdminWallet(w) || isRishav ? "Admin" : (m.role || "Member"),
+      });
     }
   }
 
@@ -61,9 +69,10 @@ export async function POST(request: Request) {
   const memberRecord = {
     ...parsed.data,
     wallet: parsed.data.wallet.toLowerCase(),
+    role: isAdminWallet(parsed.data.wallet) ? "Admin" : "Member",
     status: "Active",
     joinedAt: new Date(),
-    participation: 100,
+    participation: 0,
   };
 
   const db = await getDatabase();

@@ -11,13 +11,13 @@ export const proposals: Proposal[] = [
     onchainId: 104,
     title: "Fund the annual open-source hacknight",
     summary:
-      "Allocate 0.12 Test POL for venue logistics, hardware adapters, and participant refreshments.",
+      "Allocate 0.12 Sepolia ETH for venue logistics, hardware adapters, and participant refreshments.",
     description:
-      "The engineering club proposes a 12-hour campus hacknight focused on tools for accessibility and public infrastructure. The requested treasury allocation will be demonstrated with Test POL and reconciled against an itemized event report after completion.",
+      "The engineering club proposes a 12-hour campus hacknight focused on tools for accessibility and public infrastructure. The requested treasury allocation will be demonstrated with Sepolia ETH and reconciled against an itemized event report after completion.",
     category: "Treasury",
     proposer: "0x7A8f113604769cb18483B1Ac4B99a6cc9872f71B",
     recipient: "0x81f38A31f3518C7a248b5744242e0Cf2E94d1Be3",
-    amount: "0.12 POL",
+    amount: "0.12 ETH",
     state: "Active",
     yesVotes: 86,
     noVotes: 18,
@@ -196,6 +196,17 @@ export const members: Member[] = [
     joinedAt: "2026-02-10T00:00:00.000Z",
     participation: 63,
   },
+  {
+    id: "member-005",
+    name: "Rishav",
+    department: "Computer Science · 3rd year",
+    studentId: "CS23-108",
+    wallet: "0xC44914D08Dda9C6864a77817607A2E4b06Ca9894",
+    role: "Admin",
+    status: "Active",
+    joinedAt: "2026-02-12T00:00:00.000Z",
+    participation: 95,
+  },
 ];
 
 export const treasuryTransactions: TreasuryTransaction[] = [
@@ -204,7 +215,7 @@ export const treasuryTransactions: TreasuryTransaction[] = [
     proposalId: "102",
     label: "Robotics lab access deposit",
     recipient: "0x49e1029c08C7CA697163bD66f27ACD3F2a3b6641",
-    amount: "0.08 POL",
+    amount: "0.08 ETH",
     timestamp: "2026-07-07T13:42:00.000Z",
     txHash:
       "0x118f9364543b429f5a17b93a3b172f821963f272e8c9393110d6077c7916c2a1",
@@ -215,7 +226,7 @@ export const treasuryTransactions: TreasuryTransaction[] = [
     proposalId: "99",
     label: "Design sprint materials",
     recipient: "0x93C623fA23C57215c56272D336B4F2e6F87F3155",
-    amount: "0.04 POL",
+    amount: "0.04 ETH",
     timestamp: "2026-06-21T09:18:00.000Z",
     txHash:
       "0xc8a0f8d2ab23c41c2c09cf517c89b0a9bce9137387501221f66030e7446f8081",
@@ -226,7 +237,7 @@ export const treasuryTransactions: TreasuryTransaction[] = [
     proposalId: "96",
     label: "Community radio equipment",
     recipient: "0x7B026bb2675172A1552b6Fca5ab041d4B1845361",
-    amount: "0.06 POL",
+    amount: "0.06 ETH",
     timestamp: "2026-06-04T15:25:00.000Z",
     txHash:
       "0x74e57c2c2cd4ba34a2eb93008a9aa750ba8b7ccf43f01d9aba2a4f36c52b9291",

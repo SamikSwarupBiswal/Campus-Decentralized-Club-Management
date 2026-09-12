@@ -71,3 +71,22 @@ export const eventSchema = z
     path: ["endTime"],
     message: "End time must be after start time",
   });
+
+export const proposalSchema = z.object({
+  title: z.string().trim().min(10, "Title must be at least 10 characters").max(120, "Title cannot exceed 120 characters"),
+  category: z.enum(["Treasury", "Events", "Operations", "Community"]),
+  duration: z.coerce.number().int().min(1).max(30).default(7),
+  description: z.string().trim().min(40, "Description must be at least 40 characters").max(5_000, "Description is too long"),
+  recipient: z
+    .string()
+    .trim()
+    .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid recipient address")
+    .optional()
+    .or(z.literal("")),
+  amount: z.string().trim().max(30).optional().or(z.literal("")),
+  metadataHash: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{64}$/, "Invalid metadata hash")
+    .optional(),
+  proposer: addressSchema.optional(),
+});

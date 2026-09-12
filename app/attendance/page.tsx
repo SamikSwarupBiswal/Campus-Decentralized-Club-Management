@@ -12,15 +12,35 @@ import Link from "next/link";
 import { AttendanceScanner } from "@/components/attendance-scanner";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Card } from "@/components/ui";
+import { getAttendanceForWallet } from "@/lib/server/attendance";
 import { getAllEvents } from "@/lib/server/events";
-import { formatDate } from "@/lib/utils";
 import { getSession, isAdminWallet } from "@/lib/server/session";
+import { formatDate } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 export default async function AttendancePage() {
   const session = await getSession();
   const isAdmin = isAdminWallet(session?.address);
   const allEvents = await getAllEvents();
   const currentEvent = allEvents.find((event) => event.attendanceStatus === "Open");
+
+  // Query actual attendance records for the currently authenticated member wallet
+  const userAttendanceRecords = await getAttendanceForWallet(session?.address);
+  const attendedEventMap = new Map(
+    userAttendanceRecords.map((rec) => [rec.eventId, rec]),
+  );
+
+  const myAttendedEvents = allEvents
+    .filter((event) => attendedEventMap.has(event.id))
+    .map((event) => ({
+      event,
+      checkedInAt: attendedEventMap.get(event.id)?.checkedInAt,
+    }));
+
+  const finalizedCount = allEvents.filter(
+    (event) => event.attendanceStatus === "Finalized",
+  ).length;
 
   return (
     <div className="page">
@@ -62,7 +82,7 @@ export default async function AttendancePage() {
         </Card>
         <Card className="attendance-stat">
           <ShieldCheck size={18} />
-          <span>Finalized proofs<strong>24 verified</strong></span>
+          <span>Finalized proofs<strong>{finalizedCount} verified</strong></span>
         </Card>
       </section>
 
@@ -90,7 +110,7 @@ export default async function AttendancePage() {
               <div className="done"><i>1</i><span><strong>Wallet signature</strong><small>Signer recovered cryptographically</small></span></div>
               <div className="done"><i>2</i><span><strong>Event & expiry</strong><small>Event-specific, under 60 seconds</small></span></div>
               <div className="done"><i>3</i><span><strong>Nonce consumption</strong><small>One-time challenge, replay blocked</small></span></div>
-              <div className="done"><i>4</i><span><strong>Final event hash</strong><small>Anchored on Polygon Amoy</small></span></div>
+              <div className="done"><i>4</i><span><strong>Final event hash</strong><small>Anchored on Ethereum Sepolia</small></span></div>
             </div>
           </Card>
         </section>
@@ -104,22 +124,63 @@ export default async function AttendancePage() {
           </div>
           <History size={20} />
         </div>
-        <table className="data-table">
-          <thead>
-            <tr><th>Event</th><th>Date</th><th>Status</th><th>Integrity</th><th>Proof</th></tr>
-          </thead>
-          <tbody>
-            {allEvents.filter((event) => event.attendanceStatus === "Finalized").map((event) => (
-              <tr key={event.id}>
-                <td className="primary-cell" data-label="Event"><strong>{event.name}</strong><span>{event.venue}</span></td>
-                <td data-label="Date">{formatDate(event.date)}</td>
-                <td data-label="Status"><Badge tone="positive"><CheckCircle2 size={11} /> Present</Badge></td>
-                <td data-label="Integrity"><span className="integrity-match"><ShieldCheck size={13} /> Hash match</span></td>
-                <td data-label="Proof"><Link href="/admin/integrity" className="table-link"><Fingerprint size={13} /> Verify</Link></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+        {!session?.address ? (
+          <div className="card empty-state" style={{ padding: "36px 16px", textAlign: "center" }}>
+            <div className="empty-state-icon" style={{ margin: "0 auto 12px" }}>
+              <History size={24} />
+            </div>
+            <h3>Wallet not connected</h3>
+            <p>Connect your MetaMask wallet and sign in to view your verified attendance records.</p>
+          </div>
+        ) : myAttendedEvents.length === 0 ? (
+          <div className="card empty-state" style={{ padding: "36px 16px", textAlign: "center" }}>
+            <div className="empty-state-icon" style={{ margin: "0 auto 12px" }}>
+              <History size={24} />
+            </div>
+            <h3>No check-ins recorded yet</h3>
+            <p>You have not checked into any club events yet. Attend an active event to record attendance.</p>
+            {currentEvent && (
+              <div style={{ marginTop: "16px" }}>
+                <Link href={`/events/${currentEvent.id}`} className="button button-primary button-sm">
+                  Check in to {currentEvent.name} <ArrowUpRight size={14} />
+                </Link>
+              </div>
+            )}
+          </div>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr><th>Event</th><th>Date</th><th>Status</th><th>Integrity</th><th>Proof</th></tr>
+            </thead>
+            <tbody>
+              {myAttendedEvents.map(({ event, checkedInAt }) => (
+                <tr key={event.id}>
+                  <td className="primary-cell" data-label="Event">
+                    <strong>{event.name}</strong>
+                    <span>{event.venue}</span>
+                  </td>
+                  <td data-label="Date">{formatDate(checkedInAt || event.date)}</td>
+                  <td data-label="Status">
+                    <Badge tone="positive">
+                      <CheckCircle2 size={11} /> Present
+                    </Badge>
+                  </td>
+                  <td data-label="Integrity">
+                    <span className="integrity-match">
+                      <ShieldCheck size={13} /> {event.attendanceStatus === "Finalized" ? "Hash match" : "Recorded"}
+                    </span>
+                  </td>
+                  <td data-label="Proof">
+                    <Link href="/admin/integrity" className="table-link">
+                      <Fingerprint size={13} /> Verify
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Card>
     </div>
   );

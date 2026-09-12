@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowUpRight, Vote, Vault, CalendarDays, QrCode, Users, Fingerprint, Settings2 } from "lucide-react";
+import { ArrowUpRight, Vote, Vault, CalendarDays, QrCode, Users, Fingerprint, Settings2, User } from "lucide-react";
 import { getSession, isMemberRegistered, isAdminWallet } from "@/lib/server/session";
 
 const areas = [
+  { name: "Your identity & record.", label: "Profile", description: "View your verified credentials, testnet ETH balance, and attendance.", href: "/profile", icon: User },
   { name: "Make your voice count.", label: "Governance", description: "Propose the next big idea. Read the details, weigh in, and vote.", href: "/proposals", icon: Vote },
-  { name: "Follow the funds.", label: "Treasury", description: "See how Test POL is allocated through collective decisions.", href: "/treasury", icon: Vault },
+  { name: "Follow the funds.", label: "Treasury", description: "See how Sepolia ETH is allocated through collective decisions.", href: "/treasury", icon: Vault },
   { name: "Find your next thing.", label: "Events", description: "Workshops, meetups, and ideas that bring the club together.", href: "/events", icon: CalendarDays },
   { name: "Show up. Be counted.", label: "Attendance", description: "Sign a short-lived QR with your wallet for a verified check-in.", href: "/attendance", icon: QrCode },
   { name: "Meet the collective.", label: "Members", description: "One member, one voice. Explore the people behind the club.", href: "/members", icon: Users },
@@ -48,7 +49,7 @@ export default async function DashboardPage() {
         <Fingerprint size={20} />
         <div>
           <strong>Connection is the first step.</strong>
-          Connect MetaMask, switch to Polygon Amoy, then sign a message to log in.
+          Connect MetaMask, switch to Sepolia, then sign a message to log in.
         </div>
       </div>
     </div>

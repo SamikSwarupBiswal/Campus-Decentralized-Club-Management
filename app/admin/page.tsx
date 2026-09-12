@@ -144,7 +144,7 @@ export default function AdminPage() {
                 <div className="form-field"><label htmlFor="department">Department</label><input id="department" name="department" required placeholder="Computer Science" /></div>
                 <div className="form-field"><label htmlFor="year">Academic year</label><select id="year" name="year"><option>1st year</option><option>2nd year</option><option>3rd year</option><option>4th year</option></select></div>
               </div>
-              <div className="notice proposal-notice"><CircleAlert size={17} /><div><strong>Confirm the wallet with the student</strong>Membership is non-transferable. Registration writes eligibility to Polygon Amoy.</div></div>
+              <div className="notice proposal-notice"><CircleAlert size={17} /><div><strong>Confirm the wallet with the student</strong>Membership is non-transferable. Registration writes eligibility to Ethereum Sepolia.</div></div>
               <div className="form-actions"><Button type="submit" disabled={saving}>{saving ? <LoaderCircle size={16} className="spin" /> : <UserPlus size={16} />} Register member</Button></div>
             </form>
           </Card>

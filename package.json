@@ -2,7 +2,7 @@
   "name": "campus-dao",
   "version": "1.0.0",
   "private": true,
-  "description": "Campus DAO — decentralized college club governance on Polygon Amoy",
+  "description": "Campus DAO — decentralized college club governance on Ethereum Sepolia",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

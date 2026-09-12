@@ -26,6 +26,46 @@ export async function attendanceExists(eventId: string, wallet: string) {
   );
 }
 
+export interface UserAttendanceItem {
+  eventId: string;
+  checkedInAt: string;
+}
+
+export async function getAttendanceForWallet(
+  wallet?: string | null,
+): Promise<UserAttendanceItem[]> {
+  if (!wallet) return [];
+  const normalized = wallet.toLowerCase();
+  const db = await getDatabase();
+  if (db) {
+    try {
+      const records = await db
+        .collection<{ eventId: string; checkedInAt?: string | Date }>("attendance")
+        .find({ wallet: normalized })
+        .sort({ checkedInAt: -1 })
+        .toArray();
+      return records.map((r) => ({
+        eventId: r.eventId,
+        checkedInAt:
+          typeof r.checkedInAt === "string"
+            ? r.checkedInAt
+            : r.checkedInAt instanceof Date
+              ? r.checkedInAt.toISOString()
+              : new Date().toISOString(),
+      }));
+    } catch (e) {
+      console.error("Failed to query user attendance:", e);
+    }
+  }
+
+  return memoryAttendance
+    .filter((record) => record.wallet.toLowerCase() === normalized)
+    .map((r) => ({
+      eventId: r.eventId,
+      checkedInAt: r.checkedInAt || new Date().toISOString(),
+    }));
+}
+
 export async function saveAttendance(
   record: Omit<AttendanceRecord, "id">,
 ) {

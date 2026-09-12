@@ -1,4 +1,5 @@
 import type { Address } from "viem";
+import sepoliaDeployment from "@/deployments/sepolia.json";
 
 function address(value: string | undefined): Address | undefined {
   if (!value || !/^0x[a-fA-F0-9]{40}$/.test(value)) return undefined;
@@ -6,10 +7,10 @@ function address(value: string | undefined): Address | undefined {
 }
 
 export const contractAddresses = {
-  membership: address(process.env.NEXT_PUBLIC_MEMBERSHIP_CONTRACT),
-  governor: address(process.env.NEXT_PUBLIC_GOVERNOR_CONTRACT),
-  treasury: address(process.env.NEXT_PUBLIC_TREASURY_CONTRACT),
-  attendance: address(process.env.NEXT_PUBLIC_ATTENDANCE_CONTRACT),
+  membership: address(process.env.NEXT_PUBLIC_MEMBERSHIP_CONTRACT || sepoliaDeployment.contracts.membership),
+  governor: address(process.env.NEXT_PUBLIC_GOVERNOR_CONTRACT || sepoliaDeployment.contracts.governor),
+  treasury: address(process.env.NEXT_PUBLIC_TREASURY_CONTRACT || sepoliaDeployment.contracts.treasury),
+  attendance: address(process.env.NEXT_PUBLIC_ATTENDANCE_CONTRACT || sepoliaDeployment.contracts.attendance),
 };
 
 export const membershipAbi = [

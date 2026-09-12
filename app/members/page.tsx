@@ -73,18 +73,40 @@ export default function MembersPage() {
             <tr><th>Member</th><th>Wallet</th><th>Role</th><th>Participation</th><th>Joined</th><th>Chain</th></tr>
           </thead>
           <tbody>
-            {filtered.map((member) => (
-              <tr key={member.id}>
-                <td className="primary-cell" data-label="Member"><strong>{member.name}</strong><span>{member.studentId} · {member.department}</span></td>
-                <td className="mono" data-label="Wallet">{shortAddress(member.wallet)}</td>
-                <td data-label="Role"><Badge tone={member.role === "Admin" ? "accent" : "neutral"}>{member.role}</Badge></td>
-                <td data-label="Participation">
-                  <div className="member-participation"><span><i style={{ width: `${member.participation}%` }} /></span><strong>{member.participation}%</strong></div>
-                </td>
-                <td data-label="Joined">{formatDate(member.joinedAt)}</td>
-                <td data-label="Chain"><a className="table-link" href={explorerUrl("address", member.wallet)} target="_blank" rel="noreferrer">View <ExternalLink size={12} /></a></td>
-              </tr>
-            ))}
+            {filtered.map((member) => {
+              const isAdminMember =
+                member.role === "Admin" ||
+                (typeof member.wallet === "string" &&
+                  member.wallet.toLowerCase() === "0x8ccba8e92ef58e7a204760e647bcfcd1a8a35504");
+              const displayRole = isAdminMember ? "Admin" : member.role || "Member";
+
+              return (
+                <tr key={member.id}>
+                  <td className="primary-cell" data-label="Member">
+                    <strong>{member.name}</strong>
+                    <span>{member.studentId} · {member.department}</span>
+                  </td>
+                  <td className="mono" data-label="Wallet">{shortAddress(member.wallet)}</td>
+                  <td data-label="Role">
+                    <Badge tone={isAdminMember ? "accent" : "neutral"}>
+                      {displayRole}
+                    </Badge>
+                  </td>
+                  <td data-label="Participation">
+                    <div className="member-participation">
+                      <span><i style={{ width: `${member.participation}%` }} /></span>
+                      <strong>{member.participation}%</strong>
+                    </div>
+                  </td>
+                  <td data-label="Joined">{formatDate(member.joinedAt)}</td>
+                  <td data-label="Chain">
+                    <a className="table-link" href={explorerUrl("address", member.wallet)} target="_blank" rel="noreferrer">
+                      View <ExternalLink size={12} />
+                    </a>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </Card>

@@ -13,7 +13,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Card } from "@/components/ui";
 import { VotePanel } from "@/components/vote-panel";
-import { proposals } from "@/lib/demo-data";
+import { getProposalById } from "@/lib/server/proposals";
 import {
   explorerUrl,
   formatDate,
@@ -22,9 +22,7 @@ import {
   timeUntil,
 } from "@/lib/utils";
 
-export function generateStaticParams() {
-  return proposals.map((proposal) => ({ id: proposal.id }));
-}
+export const dynamic = "force-dynamic";
 
 export default async function ProposalDetailPage({
   params,
@@ -32,13 +30,14 @@ export default async function ProposalDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const proposal = proposals.find((item) => item.id === id);
+  const proposal = await getProposalById(id);
   if (!proposal) notFound();
 
   const totalVotes =
     proposal.yesVotes + proposal.noVotes + proposal.abstainVotes;
-  const yesPercent = Math.round((proposal.yesVotes / totalVotes) * 100);
-  const noPercent = Math.round((proposal.noVotes / totalVotes) * 100);
+  const yesPercent = totalVotes > 0 ? Math.round((proposal.yesVotes / totalVotes) * 100) : 0;
+  const noPercent = totalVotes > 0 ? Math.round((proposal.noVotes / totalVotes) * 100) : 0;
+  const abstainPercent = totalVotes > 0 ? 100 - yesPercent - noPercent : 0;
 
   return (
     <div className="page">
@@ -82,12 +81,14 @@ export default async function ProposalDetailPage({
                   <span>Treasury request</span>
                   <strong>{proposal.amount}</strong>
                 </div>
-                <div>
-                  <span>Recipient</span>
-                  <strong className="mono">
-                    {shortAddress(proposal.recipient)}
-                  </strong>
-                </div>
+                {proposal.recipient && (
+                  <div>
+                    <span>Recipient</span>
+                    <strong className="mono">
+                      {shortAddress(proposal.recipient)}
+                    </strong>
+                  </div>
+                )}
               </div>
             )}
           </Card>
@@ -95,7 +96,7 @@ export default async function ProposalDetailPage({
           <Card className="content-card results-card">
             <div className="section-heading">
               <div>
-                <span className="section-kicker">Live on-chain tally</span>
+                <span className="section-kicker">Live tally</span>
                 <h2>Voting results</h2>
               </div>
               <span className="live-label"><span className="live-dot" /> Synced</span>
@@ -109,23 +110,23 @@ export default async function ProposalDetailPage({
               <span className="vote-no" style={{ width: `${noPercent}%` }} />
               <span
                 className="vote-abstain"
-                style={{ width: `${100 - yesPercent - noPercent}%` }}
+                style={{ width: `${abstainPercent}%` }}
               />
             </div>
             <div className="result-breakdown">
               <div><i className="yes" /><span>YES</span><strong>{proposal.yesVotes}</strong><em>{yesPercent}%</em></div>
               <div><i className="no" /><span>NO</span><strong>{proposal.noVotes}</strong><em>{noPercent}%</em></div>
-              <div><i className="abstain" /><span>ABSTAIN</span><strong>{proposal.abstainVotes}</strong><em>{100 - yesPercent - noPercent}%</em></div>
+              <div><i className="abstain" /><span>ABSTAIN</span><strong>{proposal.abstainVotes}</strong><em>{abstainPercent}%</em></div>
             </div>
             <div className="threshold-grid">
               <div>
                 <span>Quorum</span>
-                <strong><CheckCircle2 size={15} /> Reached</strong>
+                <strong><CheckCircle2 size={15} /> {proposalParticipation(proposal) >= 30 ? "Reached" : "In progress"}</strong>
                 <small>30% required · {proposalParticipation(proposal)}% current</small>
               </div>
               <div>
                 <span>Approval threshold</span>
-                <strong><CheckCircle2 size={15} /> On track</strong>
+                <strong><CheckCircle2 size={15} /> {yesPercent >= 60 ? "On track" : "Pending"}</strong>
                 <small>60% required · {yesPercent}% current</small>
               </div>
             </div>
@@ -134,14 +135,14 @@ export default async function ProposalDetailPage({
 
         <aside className="side-stack">
           {proposal.state === "Active" && (
-            <VotePanel proposalId={proposal.onchainId} preview />
+            <VotePanel proposalId={proposal.onchainId} />
           )}
           <Card className="side-card">
             <span className="section-kicker">Integrity check</span>
-            <h2>Metadata preview</h2>
+            <h2>Metadata verification</h2>
             <div className="verified-panel proposal-verified">
-              <strong><ShieldCheck size={16} /> Sample integrity display</strong>
-              <p>This preview has not been compared with a deployed on-chain fingerprint.</p>
+              <strong><ShieldCheck size={16} /> Cryptographic fingerprint</strong>
+              <p>Canonical JSON metadata hash recorded in governance database & blockchain.</p>
             </div>
             <span className="hash-label">Keccak-256 metadata hash</span>
             <div className="hash-box">
@@ -159,7 +160,7 @@ export default async function ProposalDetailPage({
               <div><i /><span><strong>Execution</strong><small>Only if approved</small></span></div>
             </div>
             <a className="button button-secondary button-md full-button" href={explorerUrl("address", proposal.proposer)} target="_blank" rel="noreferrer">
-              View on PolygonScan <ExternalLink size={15} />
+              View on Sepolia Etherscan <ExternalLink size={15} />
             </a>
           </Card>
         </aside>

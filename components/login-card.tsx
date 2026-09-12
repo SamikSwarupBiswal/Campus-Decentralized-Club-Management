@@ -17,7 +17,7 @@ export function LoginCard() {
       <div className="login-mark"><Wallet size={27} /></div>
       <span className="section-kicker">Member access</span>
       <h1 id="login-title">Enter with MetaMask.</h1>
-      <p>Connect your wallet, switch to Polygon Amoy, and sign a free message to prove that the wallet belongs to you.</p>
+      <p>Connect your wallet, switch to Ethereum Sepolia, and sign a free message to prove that the wallet belongs to you.</p>
       <div className="login-steps">
         <div><span>01</span><strong>Connect MetaMask</strong></div>
         <div><span>02</span><strong>Sign the login message</strong></div>

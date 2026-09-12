@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s · Campus DAO",
   },
   description:
-    "Transparent, verifiable college club governance on Polygon Amoy.",
+    "Transparent, verifiable college club governance on Ethereum Sepolia.",
   icons: {
     icon: "/favicon.svg",
   },
@@ -22,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>

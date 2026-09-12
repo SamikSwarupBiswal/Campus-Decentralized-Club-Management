@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Compose } from "@/components/ui/compose";
 
 const mentions = [{ id: "club", label: "club-members", sublabel: "the whole collective" }, { id: "admin", label: "club-admin", sublabel: "membership manager" }];
-const commands = [{ id: "fund", label: "fund", hint: "Request Test POL" }, { id: "event", label: "event", hint: "Propose a club event" }, { id: "vote", label: "vote", hint: "Open a governance vote" }];
+const commands = [{ id: "fund", label: "fund", hint: "Request Sepolia ETH" }, { id: "event", label: "event", hint: "Propose a club event" }, { id: "vote", label: "vote", hint: "Open a governance vote" }];
 
 export function LandingCompose() {
   const router = useRouter();

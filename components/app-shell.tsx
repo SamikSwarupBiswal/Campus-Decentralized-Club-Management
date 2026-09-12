@@ -9,6 +9,7 @@ import {
   QrCode,
   Settings2,
   ShieldCheck,
+  User,
   Users,
   Vault,
   Vote,
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: Gauge },
+  { href: "/profile", label: "Profile", icon: User },
   { href: "/proposals", label: "Proposals", icon: Vote },
   { href: "/treasury", label: "Treasury", icon: Vault },
   { href: "/events", label: "Events", icon: CalendarDays },
