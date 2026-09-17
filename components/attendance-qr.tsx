@@ -1,10 +1,18 @@
 "use client";
 
-import { Clock3, LoaderCircle, QrCode, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock3,
+  LoaderCircle,
+  QrCode,
+  RefreshCw,
+  ShieldCheck,
+  Wallet,
+} from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { useAccount, useConnect, useSignMessage } from "wagmi";
-import { Button, Card } from "./ui";
+import { Badge, Button, Card } from "./ui";
 
 export function AttendanceQr({ eventId }: { eventId: string }) {
   const { address, isConnected, connector: activeConnector } = useAccount();
@@ -15,6 +23,58 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
   const [remaining, setRemaining] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
+  const [alreadyCheckedIn, setAlreadyCheckedIn] = useState(false);
+
+  // Check if wallet has already recorded attendance for this event
+  useEffect(() => {
+    let active = true;
+    async function checkStatus() {
+      if (!address) {
+        setAlreadyCheckedIn(false);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `/api/attendance/challenge?eventId=${encodeURIComponent(eventId)}&wallet=${encodeURIComponent(address)}`,
+          { cache: "no-store" },
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (active && data.checkedIn) {
+          setAlreadyCheckedIn(true);
+          setImage(undefined);
+        }
+      } catch {
+        // ignore
+      }
+    }
+    void checkStatus();
+    return () => {
+      active = false;
+    };
+  }, [eventId, address]);
+
+  // While QR code is active on screen, poll to detect when admin scans it
+  useEffect(() => {
+    if (!image || alreadyCheckedIn || !address) return;
+    const interval = window.setInterval(async () => {
+      try {
+        const res = await fetch(
+          `/api/attendance/challenge?eventId=${encodeURIComponent(eventId)}&wallet=${encodeURIComponent(address)}`,
+          { cache: "no-store" },
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.checkedIn) {
+          setAlreadyCheckedIn(true);
+          setImage(undefined);
+        }
+      } catch {
+        // ignore
+      }
+    }, 2000);
+    return () => window.clearInterval(interval);
+  }, [image, alreadyCheckedIn, eventId, address]);
 
   useEffect(() => {
     if (!expiresAt) return;
@@ -73,7 +133,14 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
         timestamp?: number;
         expiresAt?: number;
         error?: string;
+        alreadyCheckedIn?: boolean;
       };
+      if (response.status === 409 || challenge.alreadyCheckedIn) {
+        setAlreadyCheckedIn(true);
+        setImage(undefined);
+        setError("Attendance is already recorded for this event. Another QR code cannot be generated.");
+        return;
+      }
       if (!response.ok || !challenge.message || !challenge.expiresAt) {
         throw new Error(challenge.error || "Unable to create challenge");
       }
@@ -113,11 +180,32 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
       <div className="section-heading">
         <div>
           <span className="section-kicker">Your check-in pass</span>
-          <h2>Signed attendance QR</h2>
+          <h2>{alreadyCheckedIn ? "Attendance verified" : "Signed attendance QR"}</h2>
         </div>
-        <QrCode size={20} />
+        {alreadyCheckedIn ? <CheckCircle2 size={20} style={{ color: "var(--color-positive, #10b981)" }} /> : <QrCode size={20} />}
       </div>
-      {image ? (
+      {alreadyCheckedIn ? (
+        <div className="qr-empty qr-confirmed" style={{ textAlign: "center", padding: "24px 12px" }}>
+          <div style={{ color: "var(--color-positive, #10b981)", display: "flex", justifyContent: "center", marginBottom: "14px" }}>
+            <CheckCircle2 size={44} />
+          </div>
+          <Badge tone="positive" style={{ marginBottom: "10px" }}>Attendance Confirmed</Badge>
+          <h3 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "8px" }}>
+            You are checked in!
+          </h3>
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem", lineHeight: 1.5, marginBottom: "16px" }}>
+            Your attendance pass for this event has been scanned and recorded.
+            In accordance with club rules, duplicate QR codes cannot be generated.
+          </p>
+          <div className="notice" style={{ textAlign: "left", fontSize: "0.82rem" }}>
+            <ShieldCheck size={16} />
+            <div>
+              <strong>Verified Presence</strong>
+              Your participation is confirmed and will be included in the finalized on-chain attendance proof.
+            </div>
+          </div>
+        </div>
+      ) : image ? (
         <>
           <div className={`qr-image-wrap ${expired ? "expired" : ""}`}>
             {/* qrcode returns a locally generated data URI, not remote content. */}
@@ -148,7 +236,7 @@ export function AttendanceQr({ eventId }: { eventId: string }) {
           </Button>
         </div>
       )}
-      {error && <p className="form-error">{error}</p>}
+      {error && !alreadyCheckedIn && <p className="form-error">{error}</p>}
     </Card>
   );
 }

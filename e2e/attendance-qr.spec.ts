@@ -138,5 +138,50 @@ test("admin scans attendee QR and sees the updated list of members who gave atte
   await expect(page.locator(".attendees-roster").getByText("Aarav Gupta")).toBeVisible();
   await expect(page.getByText(/CS24-999/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Scan next pass" })).toBeVisible();
+
+  // 7. Verify that once checked in, requesting another QR challenge is blocked
+  const secondChallengeRes = await page.request.post("/api/attendance/challenge", {
+    data: { eventId: "evt-campus-hacklab", wallet: studentWallet.address },
+  });
+  expect(secondChallengeRes.status()).toBe(409);
+  const secondChallengeBody = await secondChallengeRes.json();
+  expect(secondChallengeBody.error).toContain("Attendance has already been recorded");
+  expect(secondChallengeBody.alreadyCheckedIn).toBe(true);
 });
+
+test("attendance tab displays history of previous events and clicking an event reveals all attended users", async ({ page }) => {
+  test.setTimeout(60_000);
+
+  // Authenticate session so middleware allows /attendance
+  const viewerWallet = Wallet.createRandom();
+  const auth = await (await page.request.post("/api/auth/challenge", { data: { address: viewerWallet.address } })).json();
+  expect((await page.request.post("/api/auth/verify", { data: {
+    address: viewerWallet.address, message: auth.message, signature: await viewerWallet.signMessage(auth.message),
+  } })).status()).toBe(200);
+  expect((await page.request.post("/api/members/register", { data: { name: "History Viewer" } })).status()).toBe(200);
+
+  await page.goto("/attendance");
+
+  // Verify Event attendance history section is present
+  await expect(page.getByText("Event attendance history")).toBeVisible();
+  await expect(page.getByText("Interface Design Critique").first()).toBeVisible();
+  await expect(page.getByText("Robotics Build Workshop").first()).toBeVisible();
+
+  // Click on "Interface Design Critique"
+  await page.getByText("Interface Design Critique").first().click();
+
+  // Verify header updates to Interface Design Critique
+  await expect(page.getByText("Interface Design Critique — Attended Users")).toBeVisible();
+
+  // Verify attended members appear in the roster
+  await expect(page.getByText("Ananya Rao").first()).toBeVisible();
+  await expect(page.getByText("Vikram Sen").first()).toBeVisible();
+  await expect(page.getByText("Present · Verified").first()).toBeVisible();
+
+  // Click on "Robotics Build Workshop"
+  await page.getByText("Robotics Build Workshop").first().click();
+  await expect(page.getByText("Robotics Build Workshop — Attended Users")).toBeVisible();
+  await expect(page.getByText("Meera Iyer").first()).toBeVisible();
+});
+
 

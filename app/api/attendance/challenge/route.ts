@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { computeEventAttendanceStatus, isEventAttendanceOpen } from "@/lib/events";
+import { attendanceExists } from "@/lib/server/attendance";
 import { getEventById } from "@/lib/server/events";
 import { issueNonce, replaceNonceMessage } from "@/lib/server/nonces";
 import { attendanceChallengeSchema } from "@/lib/server/schemas";
@@ -9,6 +10,27 @@ import { isVerifiedMember } from "@/lib/server/blockchain";
 export const runtime = "nodejs";
 
 const QR_LIFETIME_SECONDS = 60;
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const eventId = searchParams.get("eventId");
+  const wallet = searchParams.get("wallet");
+
+  if (!eventId || !wallet) {
+    return NextResponse.json(
+      { error: "Missing eventId or wallet parameter" },
+      { status: 400 },
+    );
+  }
+
+  const checkedIn = await attendanceExists(eventId, wallet);
+  return NextResponse.json({
+    ok: true,
+    eventId,
+    wallet: wallet.toLowerCase(),
+    checkedIn,
+  });
+}
 
 export async function POST(request: Request) {
   const parsed = attendanceChallengeSchema.safeParse(await request.json().catch(() => null));
@@ -41,6 +63,18 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
+
+  // Prevent generating duplicate QR codes if the user has already checked in / been scanned
+  if (await attendanceExists(parsed.data.eventId, parsed.data.wallet)) {
+    return NextResponse.json(
+      {
+        error: "Attendance has already been recorded for this event. Another check-in QR pass cannot be generated.",
+        alreadyCheckedIn: true,
+      },
+      { status: 409 },
+    );
+  }
+
   const session = await getSession();
   if (session?.address && session.address.toLowerCase() !== parsed.data.wallet.toLowerCase()) {
     return NextResponse.json(
@@ -55,6 +89,7 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
+
   const timestamp = Date.now();
   const record = await issueNonce(
     {

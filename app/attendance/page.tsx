@@ -10,9 +10,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { AttendanceScanner } from "@/components/attendance-scanner";
+import { EventAttendanceHistory } from "@/components/event-attendance-history";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Card } from "@/components/ui";
-import { getAttendanceForWallet } from "@/lib/server/attendance";
+import {
+  getAttendanceCountsByEvent,
+  getAttendanceForWallet,
+} from "@/lib/server/attendance";
 import { getAllEvents } from "@/lib/server/events";
 import { getSession, isAdminWallet } from "@/lib/server/session";
 import { formatDate } from "@/lib/utils";
@@ -23,6 +27,27 @@ export default async function AttendancePage() {
   const session = await getSession();
   const isAdmin = isAdminWallet(session?.address);
   const allEvents = await getAllEvents();
+  const counts = await getAttendanceCountsByEvent();
+
+  const eventsWithStats = allEvents.map((ev) => {
+    const realCount = counts[ev.id] || 0;
+    const displayCount = Math.max(realCount, ev.attendees || 0);
+    return {
+      id: ev.id,
+      name: ev.name,
+      date: ev.date,
+      startTime: ev.startTime,
+      endTime: ev.endTime,
+      venue: ev.venue,
+      organizer: ev.organizer,
+      description: ev.description,
+      attendanceStatus: ev.attendanceStatus,
+      capacity: ev.capacity,
+      attendeesCount: displayCount,
+      realRecordedCount: realCount,
+    };
+  });
+
   const currentEvent = allEvents.find((event) => event.attendanceStatus === "Open");
 
   // Query actual attendance records for the currently authenticated member wallet
@@ -115,6 +140,11 @@ export default async function AttendancePage() {
           </Card>
         </section>
       )}
+
+      <EventAttendanceHistory
+        initialEvents={eventsWithStats}
+        defaultSelectedEventId={currentEvent?.id || allEvents[0]?.id}
+      />
 
       <Card className="content-card attendance-history">
         <div className="section-heading">
