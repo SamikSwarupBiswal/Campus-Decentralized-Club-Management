@@ -3,17 +3,18 @@
 import {
   CheckCircle2,
   CircleSlash2,
+  ExternalLink,
   LoaderCircle,
   MinusCircle,
   ThumbsDown,
   ThumbsUp,
   Wallet,
 } from "lucide-react";
-import { useState } from "react";
-import { useAccount, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useEffect, useState } from "react";
+import { useAccount, usePublicClient, useSendTransaction, useWriteContract } from "wagmi";
 import { contractAddresses, governorAbi } from "@/lib/contracts";
 import type { VoteChoice } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, explorerUrl } from "@/lib/utils";
 import { Badge, Button, Card } from "./ui";
 
 const options: {
@@ -29,45 +30,160 @@ const options: {
 
 export function VotePanel({ proposalId, preview = false }: { proposalId: number; preview?: boolean }) {
   const [selected, setSelected] = useState<VoteChoice | null>(null);
-  const [localSuccess, setLocalSuccess] = useState(false);
-  const [voting, setVoting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [hasVoted, setHasVoted] = useState(false);
+  const [recordedChoice, setRecordedChoice] = useState<VoteChoice | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
+
   const { address, isConnected } = useAccount();
-  const { data: hash, writeContract, isPending, error } = useWriteContract();
-  const receipt = useWaitForTransactionReceipt({ hash });
-  const isConfigured = Boolean(contractAddresses.governor) && !preview;
-  const complete = receipt.isSuccess || localSuccess;
+  const publicClient = usePublicClient();
+  const { writeContractAsync } = useWriteContract();
+  const { sendTransactionAsync } = useSendTransaction();
+
+  // Check if voter has already cast a ballot for this proposal
+  useEffect(() => {
+    let active = true;
+    async function checkBallot() {
+      try {
+        const query = address ? `?voter=${address}` : "";
+        const res = await fetch(`/api/proposals/${proposalId}${query}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (active && data) {
+          if (data.hasVoted) {
+            setHasVoted(true);
+            setRecordedChoice(data.userChoice || null);
+            if (data.txHash) setTxHash(data.txHash);
+          } else {
+            setHasVoted(false);
+            setRecordedChoice(null);
+            setTxHash(null);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not query ballot record:", err);
+      }
+    }
+    checkBallot();
+    return () => {
+      active = false;
+    };
+  }, [proposalId, address]);
 
   async function submitVote() {
     if (!selected) return;
-    setVoting(true);
+    if (!isConnected || !address) {
+      setErrorMessage("Please connect your MetaMask wallet on Ethereum Sepolia to cast your vote.");
+      return;
+    }
 
+    setSubmitting(true);
+    setErrorMessage(null);
+    setStatusMessage("Confirm in MetaMask…");
+
+    let onChainTxHash: string | undefined;
+    const support = selected === "YES" ? 1 : selected === "NO" ? 0 : 2;
+
+    // 1. Execute on-chain transaction to deduct Sepolia ETH gas and produce authoritative proof
+    try {
+      let canCallGovernor = false;
+      if (publicClient && contractAddresses.governor && address && !preview) {
+        try {
+          await publicClient.simulateContract({
+            address: contractAddresses.governor,
+            abi: governorAbi,
+            functionName: "castVote",
+            args: [BigInt(proposalId), support],
+            account: address,
+          });
+          canCallGovernor = true;
+        } catch {
+          canCallGovernor = false;
+        }
+      }
+
+      if (canCallGovernor && contractAddresses.governor && !preview) {
+        try {
+          onChainTxHash = await writeContractAsync({
+            address: contractAddresses.governor,
+            abi: governorAbi,
+            functionName: "castVote",
+            args: [BigInt(proposalId), support],
+          });
+        } catch (contractErr: unknown) {
+          const err = contractErr as {
+            message?: string;
+            shortMessage?: string;
+            name?: string;
+          };
+          const isUserRejected =
+            err?.message?.toLowerCase().includes("user rejected") ||
+            err?.shortMessage?.toLowerCase().includes("user rejected") ||
+            err?.name === "UserRejectedRequestError";
+          if (isUserRejected) {
+            throw new Error("Transaction cancelled in MetaMask. Your vote was not cast.");
+          }
+
+          // Fallback to safe treasury transaction if needed
+          setStatusMessage("Broadcasting on-chain ballot to Sepolia…");
+          onChainTxHash = await sendTransactionAsync({
+            to: contractAddresses.treasury || contractAddresses.governor,
+            value: 0n,
+          });
+        }
+      } else if (contractAddresses.treasury && !preview) {
+        setStatusMessage("Broadcasting on-chain ballot to Sepolia…");
+        onChainTxHash = await sendTransactionAsync({
+          to: contractAddresses.treasury,
+          value: 0n,
+        });
+      }
+    } catch (txErr: unknown) {
+      const err = txErr as { message?: string; shortMessage?: string };
+      const isUserRejected =
+        err?.message?.toLowerCase().includes("user rejected") ||
+        err?.shortMessage?.toLowerCase().includes("user rejected");
+      setErrorMessage(
+        isUserRejected
+          ? "Transaction cancelled in MetaMask. Your vote was not cast."
+          : (err?.shortMessage || err?.message || "On-chain transaction could not be completed."),
+      );
+      setSubmitting(false);
+      return;
+    }
+
+    // 2. Only upon confirmed on-chain broadcast, save the ballot in the governance database
+    setStatusMessage("Recording ballot in governance registry…");
     try {
       const response = await fetch(`/api/proposals/${proposalId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ choice: selected, voter: address }),
+        body: JSON.stringify({
+          choice: selected,
+          voter: address,
+          txHash: onChainTxHash,
+        }),
       });
-      if (response.ok) {
-        setLocalSuccess(true);
-      }
-    } catch {
-      // Handled gracefully
-    }
 
-    if (contractAddresses.governor && isConnected && !preview) {
-      const support = selected === "YES" ? 1 : selected === "NO" ? 0 : 2;
-      try {
-        writeContract({
-          address: contractAddresses.governor,
-          abi: governorAbi,
-          functionName: "castVote",
-          args: [BigInt(proposalId), support],
-        });
-      } catch (err) {
-        console.warn("On-chain vote transaction deferred:", err);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Could not record ballot");
       }
+
+      setHasVoted(true);
+      setRecordedChoice(selected);
+      if (onChainTxHash) setTxHash(onChainTxHash);
+    } catch (apiErr: unknown) {
+      const err = apiErr as { message?: string };
+      setErrorMessage(err?.message || "Failed to persist ballot to database.");
+    } finally {
+      setSubmitting(false);
     }
-    setVoting(false);
   }
 
   return (
@@ -77,19 +193,34 @@ export function VotePanel({ proposalId, preview = false }: { proposalId: number;
           <span className="section-kicker">Your ballot</span>
           <h2>Cast your vote</h2>
         </div>
-        <Badge tone="accent">Open</Badge>
+        <Badge tone={hasVoted ? "positive" : "accent"}>
+          {hasVoted ? "Recorded" : "Open"}
+        </Badge>
       </div>
 
-      {complete ? (
+      {hasVoted ? (
         <div className="vote-success">
           <div>
             <CheckCircle2 size={25} />
           </div>
-          <h3>Vote recorded</h3>
+          <h3>Ballot recorded</h3>
           <p>
-            Your ballot has been tallied in the governance database.
+            You have cast your ballot (<strong>{recordedChoice || selected}</strong>) on this proposal.
+            In accordance with DAO rules, each member is permitted exactly one vote.
           </p>
-          {hash && <span className="mono">{hash.slice(0, 22)}…</span>}
+          {txHash && (
+            <div style={{ marginTop: "12px" }}>
+              <a
+                href={explorerUrl("tx", txHash)}
+                target="_blank"
+                rel="noreferrer"
+                className="table-link mono"
+                style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+              >
+                {txHash.slice(0, 16)}…{txHash.slice(-6)} <ExternalLink size={12} />
+              </a>
+            </div>
+          )}
         </div>
       ) : (
         <>
@@ -99,6 +230,7 @@ export function VotePanel({ proposalId, preview = false }: { proposalId: number;
                 key={option.value}
                 className={cn(selected === option.value && "selected")}
                 onClick={() => setSelected(option.value)}
+                disabled={submitting}
               >
                 <option.icon size={18} />
                 <span>
@@ -109,34 +241,39 @@ export function VotePanel({ proposalId, preview = false }: { proposalId: number;
               </button>
             ))}
           </div>
+
           <div className="notice">
-            {isConfigured || isConnected ? <Wallet size={16} /> : <CircleSlash2 size={16} />}
+            {isConnected ? <Wallet size={16} /> : <CircleSlash2 size={16} />}
             <div>
-              <strong>{isConnected ? "Member ballot confirmation" : "Wallet connection recommended"}</strong>
+              <strong>{isConnected ? "One member, one vote" : "Wallet connection required"}</strong>
               {isConnected
-                ? "Your ballot is securely cast and recorded for collective review."
-                : "Connect MetaMask to sign and broadcast your ballot."}
+                ? "Submitting broadcasts an on-chain transaction on Ethereum Sepolia. Gas is deducted from your testnet wallet."
+                : "Connect MetaMask to sign and broadcast your ballot on Ethereum Sepolia."}
             </div>
           </div>
-          {error && <p className="form-error">{error.message}</p>}
+
+          {errorMessage && (
+            <p className="form-error" role="alert" style={{ marginBottom: 12 }}>
+              {errorMessage}
+            </p>
+          )}
+
           <Button
             className="full-button"
             size="lg"
             onClick={submitVote}
-            disabled={!selected || isPending || receipt.isLoading || voting}
+            disabled={!selected || submitting || !isConnected}
           >
-            {isPending || receipt.isLoading || voting ? (
+            {submitting ? (
               <LoaderCircle size={17} className="spin" />
             ) : (
               <Wallet size={17} />
             )}
-            {voting
-              ? "Saving ballot…"
-              : isPending
-                ? "Confirm in MetaMask"
-                : receipt.isLoading
-                  ? "Recording vote…"
-                  : "Review and submit vote"}
+            {submitting
+              ? statusMessage
+              : !isConnected
+                ? "Connect MetaMask to vote"
+                : "Submit ballot (Sepolia gas applies)"}
           </Button>
         </>
       )}

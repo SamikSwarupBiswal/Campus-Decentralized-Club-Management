@@ -6,11 +6,22 @@ import type { Proposal, VoteChoice } from "@/lib/types";
 declare global {
   // eslint-disable-next-line no-var
   var __campusDaoCustomProposals: Map<string, Proposal> | undefined;
+  // eslint-disable-next-line no-var
+  var __campusDaoCustomBallots:
+    | Map<string, { choice: VoteChoice; txHash?: string; timestamp: Date }>
+    | undefined;
 }
 
 export const customProposals =
   global.__campusDaoCustomProposals ||
   (global.__campusDaoCustomProposals = new Map<string, Proposal>());
+
+export const customBallots =
+  global.__campusDaoCustomBallots ||
+  (global.__campusDaoCustomBallots = new Map<
+    string,
+    { choice: VoteChoice; txHash?: string; timestamp: Date }
+  >());
 
 export async function getAllProposals(): Promise<Proposal[]> {
   let dbProposals: Proposal[] = [];
@@ -173,10 +184,51 @@ export async function createProposalRecord(
   return proposalRecord;
 }
 
+export async function getBallotRecord(
+  proposalId: string,
+  voter: string,
+): Promise<{ choice: VoteChoice; txHash?: string; timestamp: Date } | null> {
+  const proposal = await getProposalById(proposalId);
+  if (!proposal) return null;
+
+  const normalizedVoter = voter.toLowerCase();
+  const ballotKey = `${proposal.id}:${normalizedVoter}`;
+
+  // Check in-memory store
+  if (customBallots.has(ballotKey)) {
+    return customBallots.get(ballotKey)!;
+  }
+
+  // Check MongoDB
+  const db = await getDatabase();
+  if (db) {
+    try {
+      const doc = await db.collection("ballots").findOne({
+        proposalId: proposal.id,
+        voter: { $regex: new RegExp(`^${normalizedVoter}$`, "i") },
+      });
+      if (doc) {
+        const record = {
+          choice: doc.choice as VoteChoice,
+          txHash: (doc.txHash as string) || undefined,
+          timestamp: (doc.timestamp as Date) || new Date(),
+        };
+        customBallots.set(ballotKey, record);
+        return record;
+      }
+    } catch (e) {
+      console.error("Failed to query ballot from MongoDB:", e);
+    }
+  }
+
+  return null;
+}
+
 export async function castVoteRecord(
   proposalId: string,
   voter: string,
   choice: VoteChoice,
+  txHash?: string,
 ): Promise<{ ok: boolean; proposal?: Proposal; error?: string }> {
   const proposal = await getProposalById(proposalId);
   if (!proposal) {
@@ -187,16 +239,49 @@ export async function castVoteRecord(
     return { ok: false, error: "Voting is closed for this proposal" };
   }
 
-  const updated: Proposal = {
-    ...proposal,
-    yesVotes: proposal.yesVotes + (choice === "YES" ? 1 : 0),
-    noVotes: proposal.noVotes + (choice === "NO" ? 1 : 0),
-    abstainVotes: proposal.abstainVotes + (choice === "ABSTAIN" ? 1 : 0),
-  };
+  const normalizedVoter = voter.toLowerCase();
+  const ballotKey = `${proposal.id}:${normalizedVoter}`;
+
+  // 1. Strict duplicate ballot check
+  const existingBallot = await getBallotRecord(proposal.id, normalizedVoter);
+  if (existingBallot) {
+    return {
+      ok: false,
+      error: "You have already cast a ballot on this proposal. Each member is permitted only one vote.",
+    };
+  }
 
   const db = await getDatabase();
   if (db) {
     try {
+      // Ensure unique compound index on proposalId + voter
+      await db.collection("ballots").createIndex(
+        { proposalId: 1, voter: 1 },
+        { unique: true },
+      );
+
+      // Check again inside database before recording
+      const existingInDb = await db.collection("ballots").findOne({
+        proposalId: proposal.id,
+        voter: normalizedVoter,
+      });
+      if (existingInDb) {
+        return {
+          ok: false,
+          error: "You have already cast a ballot on this proposal. Each member is permitted only one vote.",
+        };
+      }
+
+      // Record ballot first with transaction hash if provided
+      await db.collection("ballots").insertOne({
+        proposalId: proposal.id,
+        voter: normalizedVoter,
+        choice,
+        txHash: txHash || undefined,
+        timestamp: new Date(),
+      });
+
+      // Atomically update proposal tallies
       await db.collection("proposals").updateOne(
         { id: proposal.id },
         {
@@ -207,17 +292,28 @@ export async function castVoteRecord(
           },
         },
       );
-      // Also record ballot to prevent duplicate votes
-      await db.collection("ballots").insertOne({
-        proposalId: proposal.id,
-        voter: voter.toLowerCase(),
-        choice,
-        timestamp: new Date(),
-      });
-    } catch (e) {
+    } catch (e: unknown) {
+      const err = e as { code?: number; message?: string };
+      if (err?.code === 11000) {
+        return {
+          ok: false,
+          error: "You have already cast a ballot on this proposal. Each member is permitted only one vote.",
+        };
+      }
       console.error("Failed to update proposal vote in MongoDB:", e);
     }
   }
+
+  // Update in-memory records
+  const ballotData = { choice, txHash, timestamp: new Date() };
+  customBallots.set(ballotKey, ballotData);
+
+  const updated: Proposal = {
+    ...proposal,
+    yesVotes: proposal.yesVotes + (choice === "YES" ? 1 : 0),
+    noVotes: proposal.noVotes + (choice === "NO" ? 1 : 0),
+    abstainVotes: proposal.abstainVotes + (choice === "ABSTAIN" ? 1 : 0),
+  };
 
   customProposals.set(updated.id, updated);
   return { ok: true, proposal: updated };

@@ -61,7 +61,7 @@ test("one click connects and generates a QR containing the signing wallet", asyn
 
 test("attendance challenge works without a session before contract deployment", async ({ request }) => {
   const response = await request.post("/api/attendance/challenge", { data: {
-    eventId: "evt-campus-hacklab", wallet: Wallet.createRandom().address,
+    eventId: "evt-campus-hacklab", wallet: "0x7A8f113604769cb18483B1Ac4B99a6cc9872f71B",
   } });
   expect(response.status()).toBe(200);
   expect((await response.json()).message).toContain("Campus DAO Attendance");

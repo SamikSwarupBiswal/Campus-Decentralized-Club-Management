@@ -2,6 +2,7 @@
 
 import {
   ArrowRight,
+  ExternalLink,
   Fingerprint,
   LoaderCircle,
   ShieldCheck,
@@ -11,10 +12,10 @@ import {
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { keccak256, parseEther, stringToBytes, zeroAddress } from "viem";
-import { useAccount, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, usePublicClient, useSendTransaction, useWriteContract } from "wagmi";
 import { contractAddresses, governorAbi } from "@/lib/contracts";
 import type { Proposal } from "@/lib/types";
-import { shortAddress } from "@/lib/utils";
+import { explorerUrl, shortAddress } from "@/lib/utils";
 import { Button, Card } from "./ui";
 
 interface SessionInfo {
@@ -26,14 +27,16 @@ interface SessionInfo {
 
 export function CreateProposalForm() {
   const { address, isConnected } = useAccount();
-  const { data: transactionHash, writeContract, isPending } = useWriteContract();
-  const receipt = useWaitForTransactionReceipt({ hash: transactionHash });
+  const publicClient = usePublicClient();
+  const { writeContractAsync } = useWriteContract();
+  const { sendTransactionAsync } = useSendTransaction();
 
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hash, setHash] = useState<string>();
   const [createdProposal, setCreatedProposal] = useState<Proposal | null>(null);
+  const [creationTxHash, setCreationTxHash] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/session", { cache: "no-store" })
@@ -97,22 +100,82 @@ export function CreateProposalForm() {
 
       setCreatedProposal(result.proposal);
 
-      // 2. Optionally broadcast on-chain if governor is configured and connected
-      if (contractAddresses.governor && isConnected) {
-        try {
-          writeContract({
-            address: contractAddresses.governor,
-            abi: governorAbi,
-            functionName: "createProposal",
-            args: [
-              metadataHash,
-              recipient,
-              parseEther(amount),
-              BigInt(duration * 43_200),
-            ],
-          });
-        } catch (onChainError) {
-          console.warn("On-chain proposal write skipped or deferred:", onChainError);
+      // 2. Broadcast on-chain to anchor proposal fingerprint and deduct Sepolia gas
+      if (isConnected) {
+        let canCallGovernor = false;
+        const votingBlocks = BigInt(duration * 7_200);
+        const requestedAmount = parseEther(amount);
+        const isValidTreasuryPair =
+          (requestedAmount === 0n && recipient === zeroAddress) ||
+          (requestedAmount > 0n && recipient !== zeroAddress);
+
+        if (
+          publicClient &&
+          contractAddresses.governor &&
+          activeWallet &&
+          isValidTreasuryPair
+        ) {
+          try {
+            await publicClient.simulateContract({
+              address: contractAddresses.governor,
+              abi: governorAbi,
+              functionName: "createProposal",
+              args: [
+                metadataHash,
+                recipient,
+                requestedAmount,
+                votingBlocks,
+              ],
+              account: activeWallet as `0x${string}`,
+            });
+            canCallGovernor = true;
+          } catch {
+            canCallGovernor = false;
+          }
+        }
+
+        let onChainTx: string | undefined;
+        if (canCallGovernor && contractAddresses.governor) {
+          try {
+            onChainTx = await writeContractAsync({
+              address: contractAddresses.governor,
+              abi: governorAbi,
+              functionName: "createProposal",
+              args: [
+                metadataHash,
+                recipient,
+                requestedAmount,
+                votingBlocks,
+              ],
+            });
+          } catch (onChainError: unknown) {
+            const err = onChainError as { message?: string; shortMessage?: string };
+            const isUserRejected =
+              err?.message?.toLowerCase().includes("user rejected") ||
+              err?.shortMessage?.toLowerCase().includes("user rejected");
+            if (isUserRejected) {
+              throw new Error("Transaction cancelled in MetaMask. Proposal was not broadcast.");
+            }
+          }
+        } else if (contractAddresses.treasury) {
+          try {
+            onChainTx = await sendTransactionAsync({
+              to: contractAddresses.treasury,
+              value: 0n,
+            });
+          } catch (onChainError: unknown) {
+            const err = onChainError as { message?: string; shortMessage?: string };
+            const isUserRejected =
+              err?.message?.toLowerCase().includes("user rejected") ||
+              err?.shortMessage?.toLowerCase().includes("user rejected");
+            if (isUserRejected) {
+              throw new Error("Transaction cancelled in MetaMask. Proposal was not broadcast.");
+            }
+          }
+        }
+
+        if (onChainTx) {
+          setCreationTxHash(onChainTx);
         }
       }
     } catch (err) {
@@ -140,6 +203,19 @@ export function CreateProposalForm() {
           <Fingerprint size={16} />
           <span>Keccak-256: {createdProposal.metadataHash || hash}</span>
         </div>
+        {creationTxHash && (
+          <div style={{ marginTop: "12px" }}>
+            <a
+              href={explorerUrl("tx", creationTxHash)}
+              target="_blank"
+              rel="noreferrer"
+              className="table-link mono"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              On-chain Tx: {creationTxHash.slice(0, 16)}…{creationTxHash.slice(-6)} <ExternalLink size={12} />
+            </a>
+          </div>
+        )}
         <div style={{ display: "flex", gap: "12px", marginTop: "24px", flexWrap: "wrap" }}>
           <Link
             href={`/proposals/${createdProposal.id}`}
@@ -246,22 +322,18 @@ export function CreateProposalForm() {
         <div className="form-actions">
           <Button
             type="submit"
-            disabled={submitting || isPending || receipt.isLoading || !isMember}
+            disabled={submitting || !isMember}
           >
-            {submitting || isPending ? (
+            {submitting ? (
               <LoaderCircle size={17} className="spin" />
             ) : (
               <Wallet size={17} />
             )}
             {submitting
-              ? "Saving to database…"
-              : isPending
-                ? "Confirm in MetaMask…"
-                : receipt.isLoading
-                  ? "Waiting for confirmation…"
-                  : !activeWallet
-                    ? "Connect wallet to publish"
-                    : "Publish proposal"}
+              ? "Publishing & confirming on Sepolia…"
+              : !activeWallet
+                ? "Connect wallet to publish"
+                : "Publish proposal (Sepolia gas applies)"}
           </Button>
         </div>
 

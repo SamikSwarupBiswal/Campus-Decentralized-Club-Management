@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { isVerifiedMember } from "@/lib/server/blockchain";
-import { castVoteRecord, getProposalById } from "@/lib/server/proposals";
+import {
+  castVoteRecord,
+  getBallotRecord,
+  getProposalById,
+} from "@/lib/server/proposals";
 import { getSession } from "@/lib/server/session";
 import type { VoteChoice } from "@/lib/types";
 
 export const runtime = "nodejs";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -15,7 +19,32 @@ export async function GET(
   if (!proposal) {
     return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
   }
-  return NextResponse.json({ proposal });
+
+  const { searchParams } = new URL(request.url);
+  const session = await getSession();
+  const voter = (searchParams.get("voter") || session?.address) as
+    | `0x${string}`
+    | undefined;
+
+  let hasVoted = false;
+  let userChoice: VoteChoice | null = null;
+  let txHash: string | null = null;
+
+  if (voter) {
+    const ballot = await getBallotRecord(proposal.id, voter);
+    if (ballot) {
+      hasVoted = true;
+      userChoice = ballot.choice;
+      txHash = ballot.txHash || null;
+    }
+  }
+
+  return NextResponse.json({
+    proposal,
+    hasVoted,
+    userChoice,
+    txHash,
+  });
 }
 
 export async function POST(
@@ -27,6 +56,7 @@ export async function POST(
   const body = await request.json().catch(() => ({}));
   const choice = body.choice as VoteChoice;
   const voter = (session?.address || body.voter) as `0x${string}` | undefined;
+  const txHash = (body.txHash as string) || undefined;
 
   if (!voter) {
     return NextResponse.json(
@@ -47,7 +77,7 @@ export async function POST(
     return NextResponse.json({ error: "Invalid vote choice" }, { status: 400 });
   }
 
-  const result = await castVoteRecord(id, voter, choice);
+  const result = await castVoteRecord(id, voter, choice, txHash);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }

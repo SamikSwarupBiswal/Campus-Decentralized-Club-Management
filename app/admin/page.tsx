@@ -12,8 +12,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import { useAccount, useWriteContract } from "wagmi";
 import { PageHeader } from "@/components/page-header";
 import { Badge, Button, Card } from "@/components/ui";
+import { contractAddresses, membershipAbi } from "@/lib/contracts";
 import { events as fallbackEvents, members as fallbackMembers } from "@/lib/demo-data";
 import { cn, formatDate, shortAddress } from "@/lib/utils";
 import type { ClubEvent, Member } from "@/lib/types";
@@ -22,6 +24,8 @@ type Tab = "members" | "events";
 
 export default function AdminPage() {
   const router = useRouter();
+  const { isConnected } = useAccount();
+  const { writeContractAsync } = useWriteContract();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [tab, setTab] = useState<Tab>("members");
   const [saving, setSaving] = useState(false);
@@ -93,6 +97,20 @@ export default function AdminPage() {
       });
       const body = (await response.json()) as { message?: string; error?: string };
       if (!response.ok) throw new Error(body.error || "Request failed");
+
+      if (kind === "member" && contractAddresses.membership && isConnected && data.wallet) {
+        try {
+          await writeContractAsync({
+            address: contractAddresses.membership,
+            abi: membershipAbi,
+            functionName: "registerMember",
+            args: [String(data.wallet) as `0x${string}`],
+          });
+        } catch (onChainErr) {
+          console.warn("On-chain membership registration deferred:", onChainErr);
+        }
+      }
+
       setNotice(body.message || `${kind} saved`);
       event.currentTarget.reset();
       refreshData();

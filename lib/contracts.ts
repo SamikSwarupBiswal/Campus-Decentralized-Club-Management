@@ -28,9 +28,23 @@ export const membershipAbi = [
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
   },
+  {
+    type: "function",
+    name: "registerMember",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [],
+  },
 ] as const;
 
 export const governorAbi = [
+  {
+    type: "function",
+    name: "proposalCount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
   {
     type: "function",
     name: "castVote",
@@ -52,6 +66,13 @@ export const governorAbi = [
       { name: "votingBlocks", type: "uint64" },
     ],
     outputs: [{ name: "proposalId", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "state",
+    stateMutability: "view",
+    inputs: [{ name: "proposalId", type: "uint256" }],
+    outputs: [{ name: "", type: "uint8" }],
   },
   {
     type: "function",

@@ -20,7 +20,7 @@ test("landing links, workspace, and responsive layout", async ({ page }) => {
   await page.screenshot({ path: "test-results/login-desktop.png", fullPage: true });
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/login/);
-  await expect(page.getByRole("button", { name: "Connect MetaMask" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /MetaMask/ })).toBeVisible();
   for (const path of ["/", "/login"]) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(path);
@@ -40,7 +40,7 @@ test("signed authentication rejects bad signatures, replay, altered messages, an
   expect(challengeResponse.status()).toBe(200);
   const { message } = await challengeResponse.json();
   expect(message).toContain("Site: http://127.0.0.1:3000");
-  expect(message).toContain("Chain ID: 80002");
+  expect(message).toContain("Chain ID: 11155111");
   const signature = await wallet.signMessage(message);
   const bad = await request.post("/api/auth/verify", { data: { address: wallet.address, message, signature: await Wallet.createRandom().signMessage(message) } });
   expect(bad.status()).toBe(401);
@@ -83,8 +83,7 @@ test("wallet UI connects, signs in, and clears the server session on sign-out", 
   }, { address: wallet.address });
   await page.goto("/login");
   await page.getByRole("checkbox", { name: /Keep me signed in/ }).check();
-  await page.getByRole("button", { name: "Connect MetaMask" }).click();
-  await page.getByRole("button", { name: "Sign in with wallet" }).click();
+  await page.getByRole("button", { name: /MetaMask/ }).click();
   // New member onboarding flow: must register with name before entering dashboard
   await expect(page).toHaveURL(/register/);
   await page.getByLabel(/Full name/).fill("Test Member");
@@ -124,4 +123,57 @@ test("remember-me expiry is signed and its input is validated", async ({ request
   const token = response.headers()["set-cookie"].split(";")[0].split("=")[1];
   const payload = JSON.parse(Buffer.from(token.split(".")[0], "base64url").toString());
   expect(payload.expiresAt - payload.issuedAt).toBe(2592000);
+});
+
+test("voting enforces strictly one vote per member and rejects duplicate ballots", async ({ request }) => {
+  const wallet = Wallet.createRandom();
+  const { message } = await (await request.post("/api/auth/challenge", { data: { address: wallet.address } })).json();
+  const verifyRes = await request.post("/api/auth/verify", {
+    data: { address: wallet.address, message, signature: await wallet.signMessage(message) }
+  });
+  expect(verifyRes.status()).toBe(200);
+
+  // Register membership
+  const regRes = await request.post("/api/members/register", {
+    data: { name: "Test Voter", studentId: "VOTE-01", department: "CS", year: "3rd year" }
+  });
+  expect(regRes.status()).toBe(200);
+
+  // Check ballot status before voting
+  const beforeRes = await request.get(`/api/proposals/prop-104?voter=${wallet.address}`);
+  expect(beforeRes.status()).toBe(200);
+  const beforeData = await beforeRes.json();
+  expect(beforeData.hasVoted).toBe(false);
+  const initialYesVotes = beforeData.proposal.yesVotes;
+
+  // First vote: must succeed
+  const testTxHash = "0x" + "ab".repeat(32);
+  const vote1 = await request.post("/api/proposals/prop-104", {
+    data: { choice: "YES", voter: wallet.address, txHash: testTxHash }
+  });
+  expect(vote1.status()).toBe(200);
+  const vote1Data = await vote1.json();
+  expect(vote1Data.ok).toBe(true);
+  expect(vote1Data.proposal.yesVotes).toBe(initialYesVotes + 1);
+
+  // Check ballot status after voting: must reflect recorded vote and txHash
+  const afterRes = await request.get(`/api/proposals/prop-104?voter=${wallet.address}`);
+  expect(afterRes.status()).toBe(200);
+  const afterData = await afterRes.json();
+  expect(afterData.hasVoted).toBe(true);
+  expect(afterData.userChoice).toBe("YES");
+  expect(afterData.txHash).toBe(testTxHash);
+
+  // Second vote (duplicate attempt): must be rejected with 400
+  const vote2 = await request.post("/api/proposals/prop-104", {
+    data: { choice: "YES", voter: wallet.address }
+  });
+  expect(vote2.status()).toBe(400);
+  const vote2Data = await vote2.json();
+  expect(vote2Data.error).toContain("already cast a ballot");
+
+  // Verify vote count was not incremented again
+  const finalRes = await request.get("/api/proposals/prop-104");
+  const finalData = await finalRes.json();
+  expect(finalData.proposal.yesVotes).toBe(initialYesVotes + 1);
 });
